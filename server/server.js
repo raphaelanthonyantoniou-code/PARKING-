@@ -11,6 +11,8 @@ const { open, tx } = require("./db");
 const { ALLOWED_HOURS, bookingCost } = require("./pricing");
 const { HttpError, str, plate, email } = require("./validate");
 const ssr = require("./ssr");
+const { authModule } = require("./auth");
+const { createMailer } = require("./mailer");
 
 const ROOT = path.resolve(__dirname, "..");
 const PUBLIC = path.join(ROOT, "public");
@@ -37,11 +39,30 @@ function config(env = process.env) {
     webhook: env.NOTIFY_WEBHOOK_URL || "",
     trustProxy: env.TRUST_PROXY === "1",
     log: env.LOG !== "0",
+    production: env.NODE_ENV === "production",
+    appSecret: env.APP_SECRET || "",
+    resendKey: env.RESEND_API_KEY || "",
+    mailFrom: env.MAIL_FROM || "Parkareto <no-reply@parkareto.example>",
+    devMailbox: env.DEV_MAILBOX === "1",
+    // Multiplies every rate limit. Only for automated tests that run many requests from one address.
+    limitScale: env.NODE_ENV === "production" ? 1 : Math.max(1, Number(env.LIMIT_SCALE) || 1),
   };
 }
 
 function createApp(cfg = config()) {
+  if (!cfg.appSecret) {
+    if (cfg.production) throw new Error("APP_SECRET is required in production (a long random string).");
+    // Development: keep a generated secret next to the database so encrypted data survives restarts.
+    const f = cfg.dbFile === ":memory:" ? null : path.join(path.dirname(cfg.dbFile), ".app-secret");
+    try { cfg.appSecret = f && fs.readFileSync(f, "utf8").trim(); } catch (_) {}
+    if (!cfg.appSecret) {
+      cfg.appSecret = crypto.randomBytes(32).toString("hex");
+      if (f) { fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, cfg.appSecret, { mode: 0o600 }); }
+    }
+  }
+  if (cfg.production && !cfg.resendKey) console.warn("RESEND_API_KEY is not set: account emails will only be written to the log.");
   const db = open(cfg.dbFile, path.join(PUBLIC, "data.js"));
+  const mailer = createMailer(cfg);
 
   // ---------- Queries ----------
   const q = {
@@ -49,7 +70,7 @@ function createApp(cfg = config()) {
     garage: db.prepare("SELECT * FROM garages WHERE id = ?"),
     garageBySlug: db.prepare("SELECT * FROM garages WHERE slug = ?"),
     setFree: db.prepare("UPDATE garages SET free = ?, updated_at = ? WHERE id = ?"),
-    insBooking: db.prepare("INSERT INTO bookings (code, garage_id, plate, email, start_at, hours, total, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?)"),
+    insBooking: db.prepare("INSERT INTO bookings (code, garage_id, plate, email, start_at, hours, total, status, created_at, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)"),
     booking: db.prepare("SELECT b.*, g.name AS garage_name, g.area AS garage_area, g.slug AS garage_slug FROM bookings b JOIN garages g ON g.id = b.garage_id WHERE b.code = ?"),
     cancelBooking: db.prepare("UPDATE bookings SET status = 'cancelled' WHERE code = ? AND status = 'active'"),
     insLead: db.prepare("INSERT INTO demo_requests (name, company, email, phone, bays, plan, message, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"),
@@ -62,7 +83,9 @@ function createApp(cfg = config()) {
       (SELECT COUNT(*) FROM bookings WHERE status = 'active') AS active_bookings,
       (SELECT COALESCE(SUM(total), 0) FROM bookings WHERE status = 'active') AS booked_revenue,
       (SELECT SUM(free) FROM garages) AS free_spaces,
-      (SELECT SUM(total) FROM garages) AS total_spaces`),
+      (SELECT SUM(total) FROM garages) AS total_spaces,
+      (SELECT COUNT(*) FROM users) AS users,
+      (SELECT COUNT(*) FROM users WHERE totp_secret IS NOT NULL) AS users_app_2fa`),
   };
 
   const publicGarage = (g) => ({
@@ -100,7 +123,7 @@ function createApp(cfg = config()) {
     if (now > b.reset) { b.n = 0; b.reset = now + perMs; }
     b.n++;
     buckets.set(key, b);
-    if (b.n > max) throw new HttpError(429, "Too many requests. Try again in a minute.");
+    if (b.n > max * cfg.limitScale) throw new HttpError(429, "Too many requests. Try again in a minute.");
   }
   const sweep = setInterval(() => { const now = Date.now(); for (const [k, b] of buckets) if (now > b.reset) buckets.delete(k); }, 60000);
 
@@ -230,17 +253,17 @@ function createApp(cfg = config()) {
     },
 
     "POST /api/bookings": async (req) => {
+      const { user } = auth.requireUser(req);
       limit("book:" + ip(req), 10, 60000);
+      limit("book-user:" + user.id, 10, 60000);
       const b = await readJson(req);
       const errors = {};
       const garageId = Number(b.parkingId);
       const hours = Number(b.hours);
       const pl = plate(b.plate);
-      const em = email(b.email, false);
       const start = new Date(str(b.start, 40));
       if (!ALLOWED_HOURS.includes(hours)) errors.hours = "Choose one of the listed durations.";
       if (!pl) errors.plate = "Enter the plate as shown, for example ΙΚΧ-1234.";
-      if (em === null) errors.email = "Enter a valid email or leave it empty.";
       if (isNaN(start)) errors.start = "Choose a start date and time.";
       else if (start < Date.now() - 5 * 60000) errors.start = "Choose a start time in the future.";
       else if (start > Date.now() + 90 * 86400000) errors.start = "Bookings open up to 90 days ahead.";
@@ -252,7 +275,10 @@ function createApp(cfg = config()) {
         if (g.free <= 0) throw new HttpError(409, `${g.name} is full right now. Pick another car park.`);
         const code = "ATH-" + crypto.randomBytes(4).toString("hex").toUpperCase().slice(0, 6);
         const total = bookingCost(g, hours);
-        q.insBooking.run(code, g.id, pl, em || null, start.toISOString(), hours, total, new Date().toISOString());
+        q.insBooking.run(code, g.id, pl, user.email, start.toISOString(), hours, total, new Date().toISOString(), user.id);
+        // Remember the plate on the account (most recent first, up to 5).
+        const plates = [pl, ...JSON.parse(user.plates).filter((x) => x !== pl)].slice(0, 5);
+        db.prepare("UPDATE users SET plates = ? WHERE id = ?").run(JSON.stringify(plates), user.id);
         q.setFree.run(g.free - 1, new Date().toISOString(), g.id);
         return { code, garage: g, total, free: g.free - 1 };
       });
@@ -260,21 +286,15 @@ function createApp(cfg = config()) {
       return created({ code: made.code, parkingId: made.garage.id, name: made.garage.name, area: made.garage.area, plate: pl, start: start.toISOString(), hours, total: made.total });
     },
 
-    "GET /api/bookings/:code": (req, p, url) => {
-      limit("lookup:" + ip(req), 30, 60000);
-      const bk = q.booking.get(str(p.code, 20).toUpperCase());
-      if (!bk || plate(url.searchParams.get("plate")) !== bk.plate) throw new HttpError(404, "No booking matches that code and plate.");
-      return { code: bk.code, parkingId: bk.garage_id, name: bk.garage_name, area: bk.garage_area, plate: bk.plate, start: bk.start_at, hours: bk.hours, total: bk.total, status: bk.status };
-    },
-
-    "POST /api/bookings/:code/cancel": async (req, p) => {
-      limit("cancel:" + ip(req), 10, 60000);
-      const b = await readJson(req);
+    "POST /api/account/bookings/:code/cancel": (req, p) => {
+      const { user } = auth.requireUser(req);
+      limit("cancel:" + user.id, 10, 60000);
       const code = str(p.code, 20).toUpperCase();
       const free = tx(db, () => {
         const bk = q.booking.get(code);
-        if (!bk || plate(b.plate) !== bk.plate) throw new HttpError(404, "No booking matches that code and plate.");
+        if (!bk || bk.user_id !== user.id) throw new HttpError(404, "No booking with that code on your account.");
         if (bk.status !== "active") throw new HttpError(409, "This booking is already cancelled.");
+        if (Date.parse(bk.start_at) - Date.now() < 30 * 60000) throw new HttpError(409, "Bookings can be cancelled up to 30 minutes before they start.");
         q.cancelBooking.run(code);
         const g = q.garage.get(bk.garage_id);
         const f = Math.min(g.total, g.free + 1);
@@ -362,6 +382,15 @@ function createApp(cfg = config()) {
     },
   };
   // Compile "METHOD /path/:param" keys into matchers.
+  const auth = authModule({ db, cfg, mailer, readJson, limit, ip, tx });
+  Object.assign(api, auth.routes);
+  if (cfg.devMailbox && !cfg.resendKey && !cfg.production) {
+    // Development only: read the codes that would have been emailed.
+    api["GET /api/dev/outbox"] = (req, p, url) => {
+      const to = String(url.searchParams.get("to") || "").toLowerCase();
+      return mailer.outbox.filter((m) => !to || m.to === to).slice(-20).reverse();
+    };
+  }
   const routes = Object.entries(api).map(([key, fn]) => {
     const [method, pattern] = key.split(" ");
     const names = [];
@@ -396,13 +425,22 @@ function createApp(cfg = config()) {
           requireAdmin(req);
           return send(req, res, 200, csv(q.leads.all()), "text/csv; charset=utf-8", { "Cache-Control": "no-store", "Content-Disposition": 'attachment; filename="parkareto-demo-requests.csv"' });
         }
-        if (!["GET", "HEAD"].includes(req.method)) limit("api:" + ip(req), 60, 60000);
+        if (!["GET", "HEAD"].includes(req.method)) {
+          // Cross-site request protection: browsers send Origin on POST/PUT/PATCH/DELETE.
+          const origin = req.headers.origin;
+          if (origin) {
+            let host = "";
+            try { host = new URL(origin).host; } catch (_) {}
+            if (host !== req.headers.host) throw new HttpError(403, "Cross-site request refused.");
+          }
+          limit("api:" + ip(req), 60, 60000);
+        }
         else limit("read:" + ip(req), 300, 60000);
         for (const r of routes) {
           const m = p.match(r.re);
           if (!m || r.method !== req.method) continue;
           const params = Object.fromEntries(r.names.map((n, i) => [n, m[i + 1]]));
-          const out = await r.fn(req, params, url);
+          const out = await r.fn(req, params, url, res);
           return out && out[CREATED] ? json(req, res, 201, out.body) : json(req, res, 200, out);
         }
         const exists = routes.some((r) => r.re.test(p));
@@ -412,12 +450,16 @@ function createApp(cfg = config()) {
       if (!["GET", "HEAD"].includes(req.method)) throw new HttpError(405, "Method not allowed.");
       // Canonical URLs
       if (p === "/index.html") { res.writeHead(301, { Location: "/" }); return res.end(); }
-      if (p === "/marketplace.html") { res.writeHead(301, { Location: "/marketplace" + url.search }); return res.end(); }
+      const clean = { "/marketplace.html": "/marketplace", "/account.html": "/account", "/privacy.html": "/privacy", "/terms.html": "/terms" }[p];
+      if (clean) { res.writeHead(301, { Location: clean + url.search }); return res.end(); }
       if (p.length > 1 && p.endsWith("/")) { res.writeHead(301, { Location: p.slice(0, -1) + url.search }); return res.end(); }
 
       if (p === "/") return serveFile(req, res, "index.html") || notFound(req, res);
       if (p === "/marketplace") return serveFile(req, res, "marketplace.html") || notFound(req, res);
       if (p === "/admin") return serveFile(req, res, "admin.html") || notFound(req, res);
+      if (p === "/account") return serveFile(req, res, "account.html") || notFound(req, res);
+      if (p === "/privacy") return serveFile(req, res, "privacy.html") || notFound(req, res);
+      if (p === "/terms") return serveFile(req, res, "terms.html") || notFound(req, res);
       if (p === "/robots.txt") return send(req, res, 200, ssr.robots(cfg.site), TYPES[".txt"], { "Cache-Control": "public, max-age=3600" });
       if (p === "/sitemap.xml") return send(req, res, 200, ssr.sitemap(cfg.site, q.garages.all()), TYPES[".xml"], { "Cache-Control": "public, max-age=3600" });
       if (p === "/parking") return page(req, res, ssr.hubPage(cfg.site, q.garages.all()));
@@ -440,7 +482,7 @@ function createApp(cfg = config()) {
   const server = http.createServer(handle);
   server.keepAliveTimeout = 65000;
   function close() {
-    clearInterval(heartbeat); clearInterval(sweep); if (sim) clearInterval(sim);
+    clearInterval(heartbeat); clearInterval(sweep); if (sim) clearInterval(sim); auth.close();
     for (const res of clients) res.end();
     clients.clear();
     return new Promise((r) => server.close(() => { db.close(); r(); }));

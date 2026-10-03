@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#070b14">
+  <title>Account &amp; security | Parkareto</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="preload" href="fonts/manrope-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="fonts.css">
+  <link rel="stylesheet" href="marketplace.css">
+  <link rel="stylesheet" href="auth.css">
+  <link rel="stylesheet" href="account.css">
+</head>
+<body>
+  <header class="nav">
+    <div class="container nav-inner">
+      <a href="marketplace.html" class="brand" data-home><img class="logo-img" src="assets/logo.svg" alt="" width="67" height="40"><span class="brand-t"><b class="chrome">PARKARETO</b><small>Account &amp; security</small></span></a>
+      <nav class="nav-links nav-links-on" aria-label="Main">
+        <a href="marketplace.html" data-home>Find parking</a>
+        <div class="auth-slot" data-auth-slot></div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container acct" id="acct" hidden>
+    <aside class="acct-side">
+      <div class="acct-me"><i id="aAvatar"></i><div><b id="aName"></b><small id="aEmail"></small></div></div>
+      <nav aria-label="Account sections">
+        <a href="#profile">Profile &amp; vehicles</a>
+        <a href="#security">Sign-in &amp; security</a>
+        <a href="#devices">Devices</a>
+        <a href="#bookings">Bookings</a>
+        <a href="#danger">Delete account</a>
+      </nav>
+      <div class="acct-score" id="aScore"></div>
+    </aside>
+
+    <div class="acct-main">
+      <section class="acct-card" id="profile">
+        <h2>Profile</h2>
+        <form id="fProfile" class="acct-form" novalidate>
+          <div class="am-field" data-field="name"><label for="pName">Full name</label><input id="pName" name="name" autocomplete="name" maxlength="80" required><p class="am-err" role="alert"></p></div>
+          <div class="am-field"><label for="pEmail">Email</label><input id="pEmail" disabled><p class="hint">Your email is your sign-in and where codes are sent.</p></div>
+          <button class="am-btn small" type="submit">Save profile</button>
+        </form>
+        <h3>Vehicles</h3>
+        <p class="hint">Up to 5 plates. They're offered when you book, and the gate camera matches them.</p>
+        <ul class="plates" id="plates"></ul>
+        <form id="fPlate" class="plate-add" novalidate>
+          <input id="newPlate" placeholder="ΙΚΧ-1234" maxlength="12" aria-label="New plate" autocomplete="off">
+          <button class="am-btn small ghost" type="submit">Add plate</button>
+        </form>
+      </section>
+
+      <section class="acct-card" id="security">
+        <h2>Sign-in &amp; security</h2>
+        <div class="sec-row">
+          <div><h3>Password</h3><p class="hint">Changing it signs out your other devices.</p></div>
+          <button class="am-btn small ghost" type="button" data-toggle="fPassword">Change password</button>
+        </div>
+        <form id="fPassword" class="acct-form" novalidate hidden>
+          <p class="am-alert" role="alert"></p>
+          <div class="am-field" data-field="current"><label for="pwCur">Current password</label><div class="am-pw"><input id="pwCur" name="current" type="password" autocomplete="current-password"><button type="button" class="am-eye" aria-label="Show password" aria-pressed="false"></button></div><p class="am-err" role="alert"></p></div>
+          <div class="am-field" data-field="next"><label for="pwNew">New password</label><div class="am-pw"><input id="pwNew" name="next" type="password" autocomplete="new-password"><button type="button" class="am-eye" aria-label="Show password" aria-pressed="false"></button></div>
+            <div class="am-meter"><i></i><i></i><i></i><i></i><span class="am-meter-label"></span></div><ul class="am-rules"></ul><p class="am-err" role="alert"></p></div>
+          <button class="am-btn small" type="submit">Save new password</button>
+        </form>
+
+        <div class="sec-row twofa">
+          <div><h3>Two-step sign-in <span class="pill-on">Always on</span></h3>
+            <p class="hint" id="tfText"></p></div>
+          <div class="tf-actions" id="tfActions"></div>
+        </div>
+        <form id="fDisable" class="acct-form" novalidate hidden>
+          <p class="hint">To remove the authenticator app, confirm your password and a current code. Sign-in will go back to emailed codes.</p>
+          <p class="am-alert" role="alert"></p>
+          <div class="am-field" data-field="password"><label for="dPw">Password</label><input id="dPw" name="password" type="password" autocomplete="current-password"><p class="am-err" role="alert"></p></div>
+          <div class="am-field" data-field="code"><label for="dCode">Code from your app</label><input id="dCode" name="code" inputmode="numeric" maxlength="6" autocomplete="one-time-code"><p class="am-err" role="alert"></p></div>
+          <button class="am-btn small danger" type="submit">Remove authenticator app</button>
+        </form>
+        <form id="fRegen" class="acct-form" novalidate hidden>
+          <p class="hint">New codes replace the old ones straight away.</p>
+          <p class="am-alert" role="alert"></p>
+          <div class="am-field" data-field="password"><label for="rPw">Password</label><input id="rPw" name="password" type="password" autocomplete="current-password"><p class="am-err" role="alert"></p></div>
+          <button class="am-btn small" type="submit">Create new recovery codes</button>
+        </form>
+      </section>
+
+      <section class="acct-card" id="devices">
+        <div class="sec-row"><div><h2>Devices</h2><p class="hint">Where your account is signed in right now.</p></div><button class="am-btn small ghost" type="button" id="revokeOthers">Sign out other devices</button></div>
+        <ul class="devices" id="deviceList"></ul>
+      </section>
+
+      <section class="acct-card" id="bookings">
+        <div class="sec-row"><h2>Bookings</h2><a class="am-btn small ghost" href="marketplace.html" data-home>Book parking</a></div>
+        <div id="bookList" class="book-list"></div>
+      </section>
+
+      <section class="acct-card danger-zone" id="danger">
+        <h2>Delete account</h2>
+        <p class="hint">This removes your account, saved vehicles and sign-in settings. Past bookings stay with the car parks for their records, without your name or email.</p>
+        <button class="am-btn small danger" type="button" data-toggle="fDelete">Delete my account</button>
+        <form id="fDelete" class="acct-form" novalidate hidden>
+          <p class="am-alert" role="alert"></p>
+          <div class="am-field" data-field="password"><label for="xPw">Password</label><input id="xPw" name="password" type="password" autocomplete="current-password"><p class="am-err" role="alert"></p></div>
+          <div class="am-field" data-field="confirm"><label for="xConfirm">Type DELETE to confirm</label><input id="xConfirm" name="confirm" autocomplete="off"><p class="am-err" role="alert"></p></div>
+          <button class="am-btn small danger" type="submit">Permanently delete account</button>
+        </form>
+      </section>
+    </div>
+  </main>
+  <div class="acct-wait" id="acctWait"><i></i>Loading your account…</div>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="vendor/qrcode/qrcode.js"></script>
+  <script src="auth.js"></script>
+  <script src="account.js"></script>
+</body>
+</html>

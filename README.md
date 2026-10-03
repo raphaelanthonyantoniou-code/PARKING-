@@ -41,7 +41,25 @@ The database is created and filled from `public/data.js` on first start. Keep `D
 | `OPERATOR_KEY` | empty (off) | Lets garages push live free-space counts |
 | `SIMULATE` | on, off when `NODE_ENV=production` | Randomly changes availability so the demo looks alive |
 | `NOTIFY_WEBHOOK_URL` | empty | Slack, Teams or Zapier webhook that gets each demo request |
+| `APP_SECRET` | required in production | Encrypts authenticator keys. Long random string; never change it after launch |
+| `RESEND_API_KEY`, `MAIL_FROM` | empty | Sends sign-in codes and alerts by email |
+| `DEV_MAILBOX` | `0` | Development only: exposes `/api/dev/outbox` |
 | `TRUST_PROXY` | `0` | Set to `1` behind a reverse proxy so rate limits use the real client IP |
+
+## Driver accounts and two-step sign-in
+
+Booking on the marketplace needs an account. Tapping **Reserve** while signed out opens the sign-in window and continues the booking afterwards.
+
+- **Sign-up** asks for name, email and a password (10+ characters, not a common password, not containing the name or email; a live strength meter shows the rules). A 6-digit code is emailed to confirm the address.
+- **Every sign-in has a second step**: a code from an authenticator app (Google Authenticator, Microsoft Authenticator, Authy, 1Password…) if set up, otherwise a code emailed to the account. Codes expire after 10 minutes and 5 wrong tries end the attempt.
+- **Authenticator setup** shows a QR code and a manual key, needs a working code to turn on, and issues 10 single-use recovery codes (copy or download). Used authenticator codes can't be replayed.
+- **Password reset** by emailed code; it signs out every device.
+- **Account page** (`/account`): profile, up to 5 saved plates, password change (signs out other devices), authenticator on/off/move to a new phone, new recovery codes, signed-in devices with sign-out, booking history with cancellation (free until 30 minutes before the start), and account deletion.
+- **Security**: scrypt password hashes; authenticator keys encrypted with AES-256-GCM using `APP_SECRET`; recovery codes and one-time codes stored only as hashes; session tokens stored as SHA-256 hashes and sent in an HttpOnly, SameSite=Lax cookie (`__Host-` prefixed and Secure on HTTPS); cross-site requests refused by Origin check; per-IP and per-email rate limits; identical answers for existing and unknown emails on sign-up, sign-in and reset; email alerts for security changes.
+- **Emails** go through [Resend](https://resend.com) when `RESEND_API_KEY` is set. Without it they're written to the server log; with `DEV_MAILBOX=1` (never in production) `/api/dev/outbox` shows them for local testing.
+- **Without the server** (static files or the preview) the pages run a labelled demo: accounts live in that browser and codes appear in an on-screen "demo inbox". Authenticator apps still work there.
+
+`/privacy` and `/terms` describe what's stored and why; fill in the bracketed company details and have them reviewed before launch.
 
 ## API
 
@@ -50,9 +68,9 @@ The database is created and filled from `public/data.js` on first start. Keep `D
 | `GET /api/health` | Health check |
 | `GET /api/parkings`, `GET /api/parkings/:id` | Car parks with live free spaces |
 | `GET /api/stream` | Server-Sent Events: `snapshot`, then `availability` `{id, free}` on every change |
-| `POST /api/bookings` | `{parkingId, start (ISO), hours, plate, email?}`. Price is calculated on the server. Returns the booking code. |
-| `GET /api/bookings/:code?plate=` | Look up a booking (code and plate must match) |
-| `POST /api/bookings/:code/cancel` | `{plate}` |
+| `POST /api/bookings` | Signed in. `{parkingId, start (ISO), hours, plate}`. Price is calculated on the server. Returns the booking code. |
+| `POST /api/auth/signup`, `/login`, `/verify`, `/resend`, `/forgot`, `/reset`, `/logout`, `GET /api/auth/me` | Account sign-up and sign-in with the second step |
+| `/api/account` (`PATCH`, `DELETE`), `/api/account/password`, `/api/account/2fa/*`, `/api/account/sessions`, `/api/account/bookings` | Signed-in account management |
 | `POST /api/demo-requests` | `{name, email, company?, phone?, bays?, plan?, message?}` |
 | `PUT /api/operator/garages/:id` | `Authorization: Bearer OPERATOR_KEY`, body `{free}`: garages running Parkareto push live counts |
 | `/api/admin/*` | `Authorization: Bearer ADMIN_TOKEN`: summary, demo requests (+ CSV), bookings, car park edits |

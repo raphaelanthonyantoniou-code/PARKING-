@@ -1,0 +1,72 @@
+/* Parkareto account page */
+.nav-links-on { display: flex !important; position: static !important; flex-direction: row !important; background: none !important; padding: 0 !important; border: 0 !important; }
+.acct { display: grid; grid-template-columns: 270px 1fr; gap: 28px; padding: 36px 0 80px; align-items: start; }
+.acct[hidden] { display: none; }
+.acct-side { position: sticky; top: 92px; display: grid; gap: 18px; }
+.acct-me { display: flex; gap: 12px; align-items: center; }
+.acct-me i { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; font: 800 16px var(--body); font-style: normal; color: var(--amber-ink); background: radial-gradient(circle at 35% 30%, var(--amber-2), var(--amber)); flex: none; }
+.acct-me small { display: block; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+.acct-me div { min-width: 0; }
+.acct-side nav { display: grid; gap: 2px; }
+.acct-side nav a { padding: 9px 12px; border-radius: 10px; color: var(--muted); font-weight: 600; }
+.acct-side nav a:hover { background: rgba(255,255,255,.04); color: var(--ink); }
+.acct-score { display: flex; gap: 14px; align-items: center; padding: 16px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); }
+.acct-score ul { list-style: none; padding: 0; margin: 6px 0 0; font-size: 12.5px; color: var(--muted); display: grid; gap: 2px; }
+.acct-score li::before { content: "○ "; }
+.acct-score li.ok { color: #86efac; }
+.acct-score li.ok::before { content: "✓ "; }
+.score-ring { --p: 0; width: 64px; height: 64px; border-radius: 50%; flex: none; display: grid; place-items: center;
+  background: radial-gradient(closest-side, var(--surface) 76%, transparent 78%), conic-gradient(var(--green) calc(var(--p) * 360deg), rgba(255,255,255,.08) 0); }
+.score-ring b { font: 800 15px var(--display); }
+.acct-main { display: grid; gap: 20px; min-width: 0; }
+.acct-card { padding: 24px; border-radius: 20px; border: 1px solid var(--line); background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.01)); scroll-margin-top: 90px; }
+.acct-card h2 { font: 700 21px var(--display); margin: 0 0 14px; }
+.acct-card h3 { font: 700 16px var(--body); margin: 18px 0 4px; }
+.sec-row h3 { margin-top: 0; }
+.hint { color: var(--muted); font-size: 14px; margin: 0 0 10px; }
+.hint .warn { color: var(--orange); }
+.acct-form { display: grid; gap: 12px; max-width: 460px; margin: 12px 0 4px; }
+.acct-form[hidden] { display: none; }
+.am-btn.small { width: auto; padding: 10px 16px; font-size: 14px; justify-self: start; display: inline-block; }
+.am-btn.ghost.small { margin-top: 0; }
+.am-btn.danger { background: linear-gradient(180deg, #f87171, #dc2626); color: #fff; box-shadow: 0 10px 28px -12px rgba(220,38,38,.7); }
+.sec-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; padding: 14px 0; border-top: 1px solid var(--line); }
+.acct-card > .sec-row:first-of-type { border-top: 0; padding-top: 0; }
+.sec-row > div:first-child { min-width: 0; flex: 1 1 280px; }
+.tf-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.pill-on { display: inline-block; font: 800 11px var(--body); padding: 2px 8px; border-radius: 99px; background: rgba(34,197,94,.15); color: #6ee7a0; vertical-align: 2px; margin-left: 6px; }
+.plates { list-style: none; padding: 0; margin: 8px 0 12px; display: grid; gap: 8px; }
+.plates li { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.plate-badge { display: inline-flex; align-items: stretch; border: 2px solid #11151d; border-radius: 6px; background: #f4f5f0; color: #11151d; font: 700 16px var(--mono); letter-spacing: .06em; overflow: hidden; }
+.plate-badge i { font-style: normal; background: #1a3fa8; color: #fff; font: 700 10px var(--body); display: grid; place-items: center; padding: 0 5px; }
+.plate-badge { padding-right: 10px; gap: 8px; }
+.plate-add { display: flex; gap: 8px; max-width: 460px; }
+.plate-add input { flex: 1; min-width: 0; font: 600 16px var(--mono); text-transform: uppercase; color: var(--ink); background: rgba(255,255,255,.04); border: 1px solid var(--line-2); border-radius: 12px; padding: 10px 12px; }
+.plate-add input:focus { outline: none; border-color: var(--amber); }
+.devices { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.devices li { display: flex; gap: 12px; align-items: center; padding: 12px; border-radius: 14px; border: 1px solid var(--line); }
+.devices li > div:nth-child(2) { flex: 1; min-width: 0; }
+.devices small { display: block; color: var(--muted); font-size: 12.5px; }
+.dev-ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: rgba(255,255,255,.05); color: var(--amber-2); flex: none; }
+.dev-ic svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.book-list { display: grid; gap: 10px; }
+.bk { display: flex; justify-content: space-between; gap: 12px; padding: 14px; border-radius: 14px; border: 1px solid var(--line); }
+.bk.dim { opacity: .6; }
+.bk small { display: block; color: var(--muted); font-size: 13px; }
+.bk .code { font-family: var(--mono); color: var(--amber-2); }
+.bk-r { text-align: right; display: grid; gap: 6px; justify-items: end; align-content: start; }
+.bk-r strong { font: 700 17px var(--mono); color: var(--amber); }
+.danger-zone { border-color: rgba(239,68,68,.35); }
+.acct-wait { display: grid; justify-items: center; gap: 12px; padding: 120px 16px; color: var(--muted); }
+.acct-wait[hidden] { display: none; }
+.acct-wait i { width: 30px; height: 30px; border-radius: 50%; border: 3px solid var(--amber); border-right-color: transparent; animation: amSpin .7s linear infinite; }
+.acct-bye { min-height: 70vh; display: grid; place-content: center; justify-items: center; gap: 12px; text-align: center; }
+.acct-bye h1 { font: 800 30px var(--display); margin: 0; }
+@media (max-width: 860px) {
+  .acct { grid-template-columns: 1fr; padding-top: 22px; }
+  .acct-side { position: static; }
+  .acct-side nav { display: flex; overflow-x: auto; gap: 4px; }
+  .acct-side nav a { white-space: nowrap; }
+  .acct-card { padding: 18px; }
+  .nav-links-on > a { display: none; }
+}

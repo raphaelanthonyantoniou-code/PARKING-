@@ -50,7 +50,23 @@
   }
   function saveBookings(list) {
     try { localStorage.setItem(STORE_KEY, JSON.stringify(list)); } catch { /* storage unavailable */ }
-    $("#bookingCount").textContent = list.length;
+    refreshCount();
+  }
+  // Bookings belong to the signed-in account: from the server, or this browser in demo mode.
+  async function myBookings() {
+    const u = window.PKAuth && PKAuth.user;
+    if (!u) return [];
+    if (PKAuth.mode === "server") {
+      const r = await PKAuth.api("GET", "/api/account/bookings");
+      return r.ok ? r.data : [];
+    }
+    return loadBookings().filter((b) => b.userId === u.id).map((b) => ({ status: "active", ...b }));
+  }
+  async function refreshCount() {
+    const list = await myBookings();
+    const n = list.filter((b) => b.status === "active" && new Date(b.start).getTime() + b.hours * 3600000 > Date.now()).length;
+    $("#bookingCount").textContent = n;
+    $("#bookingCount").hidden = !n;
   }
 
   // ---------- Map ----------
@@ -161,7 +177,14 @@
   function openBooking(id) {
     const p = parkings.find((x) => x.id === id);
     if (!p || p.free === 0) return;
+    if (!window.PKAuth) return;
+    PKAuth.require((user) => showBookingForm(p, user), `Sign in or create an account to book ${p.name}.`);
+  }
+  function showBookingForm(p, user) {
     booking = p;
+    $("#bWho").innerHTML = `Booking as <b>${escapeHtml(user.name)}</b> · ${escapeHtml(user.email)}`;
+    $("#plateList").innerHTML = (user.plates || []).map((pl) => `<option value="${escapeHtml(pl)}">`).join("");
+    $("#bPlate").value = (user.plates || [])[0] || "";
     const now = new Date(Date.now() + 15 * 60000);
     $("#bookTitle").textContent = p.name;
     $("#bookArea").textContent = `${p.area} · ${euro(p.price)}/hour · max ${euro(p.daily)}/day`;
@@ -170,7 +193,7 @@
     $("#bTime").value = now.toTimeString().slice(0, 5);
     updateTotal();
     $("#bookModal").hidden = false;
-    $("#bPlate").focus();
+    ($("#bPlate").value ? $("#bookForm button[type=submit]") : $("#bPlate")).focus();
   }
   function updateTotal() {
     if (booking) $("#bTotal").textContent = euro(cost(booking, Number($("#bHours").value)));
@@ -178,9 +201,11 @@
 
   $("#bHours").addEventListener("change", updateTotal);
   function afterBooked(rec) {
-    const list = loadBookings();
-    list.unshift(rec);
-    saveBookings(list);
+    if (!rec.server) {
+      const list = loadBookings();
+      list.unshift(rec);
+      saveBookings(list);
+    } else refreshCount();
     $("#bookModal").hidden = true;
     $("#bookForm").reset();
     render();
@@ -197,15 +222,28 @@
       return;
     }
     const btn = $("#bookForm button[type=submit]");
+    if (!/^[A-Z\u0391-\u03A90-9][A-Z\u0391-\u03A90-9 -]{1,11}$/u.test(plate)) {
+      toast("Enter the plate as shown, for example ΙΚΧ-1234.");
+      $("#bPlate").focus();
+      return;
+    }
     if (API.online) {
       btn.disabled = true;
       try {
         const res = await fetch("/api/bookings", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ parkingId: booking.id, start: start.toISOString(), hours, plate, email: $("#bEmail").value.trim() }),
+          body: JSON.stringify({ parkingId: booking.id, start: start.toISOString(), hours, plate }),
         });
         const body = await res.json();
+        if (res.status === 401) {
+          // Session ended (signed out elsewhere): sign in again, then come back to this form.
+          $("#bookModal").hidden = true;
+          await PKAuth.refresh();
+          const p = booking;
+          PKAuth.open({ reason: "Your session ended. Sign in again to finish booking.", then: (u) => showBookingForm(p, u) });
+          return;
+        }
         if (!res.ok) {
           const first = body.fields && Object.values(body.fields)[0];
           toast(first || body.error || "Booking failed. Try again.");
@@ -214,6 +252,7 @@
         booking.free = Math.max(0, booking.free - 1);
         markers[booking.id].setIcon(pinIcon(booking, true)).setPopupContent(popupHtml(booking));
         afterBooked({ ...body, server: true });
+        PKAuth.refresh();
       } catch (_) {
         toast("Couldn't reach the server. Check your connection and try again.");
       } finally {
@@ -223,15 +262,24 @@
     }
     booking.free = Math.max(0, booking.free - 1);
     markers[booking.id].setIcon(pinIcon(booking)).setPopupContent(popupHtml(booking));
+    const u = PKAuth.user;
     afterBooked({
       code: "ATH-" + Math.random().toString(36).slice(2, 8).toUpperCase(),
-      parkingId: booking.id, name: booking.name, area: booking.area,
+      parkingId: booking.id, name: booking.name, area: booking.area, userId: u.id,
       start: start.toISOString(), hours, plate, total: cost(booking, hours),
     });
+    PKAuth.api("PATCH", "/api/account", { plates: [plate, ...(u.plates || []).filter((x) => x !== plate)].slice(0, 5) }).then(() => PKAuth.refresh());
   });
 
   // ---------- Ticket confirmation ----------
   function qrCells(seed) {
+    if (window.qrcode) {
+      qrcode.stringToBytes = qrcode.stringToBytesFuncs["UTF-8"];
+      const q = qrcode(0, "M"); q.addData("PARKARETO:" + seed); q.make();
+      const n = q.getModuleCount(); let d = "";
+      for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (q.isDark(y, x)) d += `M${x} ${y}h1v1h-1z`;
+      return `<svg viewBox="-2 -2 ${n + 4} ${n + 4}" role="img" aria-label="QR code for booking ${seed}"><rect x="-2" y="-2" width="${n + 4}" height="${n + 4}" fill="#fff"/><path d="${d}" fill="#0b0c10"/></svg>`;
+    }
     // Decorative code pattern derived from the booking code, with three finder squares.
     let h = 0; for (const ch of seed) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
     const n = 17, cells = [];
@@ -261,52 +309,59 @@
     t.classList.remove("printing"); void t.offsetWidth; t.classList.add("printing");
   }
 
-  function renderBookings() {
-    const list = loadBookings();
-    $("#bookingsList").innerHTML = list.length
+  let shownBookings = [];
+  async function renderBookings() {
+    const box = $("#bookingsList");
+    box.innerHTML = `<p class="muted">Loading your bookings…</p>`;
+    const list = await myBookings();
+    shownBookings = list;
+    const now = Date.now();
+    const fmt = (d) => d.toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+    const u = PKAuth.user;
+    $("#bookingsWho").textContent = u ? `${u.name} · ${u.email}` : "";
+    box.innerHTML = list.length
       ? list.map((b, i) => {
-          const start = new Date(b.start);
-          const end = new Date(start.getTime() + b.hours * 3600000);
-          const fmt = (d) => d.toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-          return `<div class="booking">
+          const start = new Date(b.start), end = new Date(start.getTime() + b.hours * 3600000);
+          const past = end.getTime() < now, cancelled = b.status === "cancelled";
+          const canCancel = !past && !cancelled && start.getTime() - now > 30 * 60000;
+          const tag = cancelled ? '<span class="bk-tag cancelled">Cancelled</span>' : past ? '<span class="bk-tag past">Completed</span>' : start.getTime() <= now ? '<span class="bk-tag live">Now</span>' : '<span class="bk-tag up">Upcoming</span>';
+          return `<div class="booking${cancelled || past ? " dim" : ""}">
             <div class="booking-head"><b>${escapeHtml(b.name)}</b><strong>${euro(b.total)}</strong></div>
-            <small>${escapeHtml(b.area)} · Plate ${escapeHtml(b.plate)}</small>
+            <small>${escapeHtml(b.area)} · Plate ${escapeHtml(b.plate)} ${tag}</small>
             <small>${fmt(start)} → ${fmt(end)}</small>
             <small>Code <span class="code">${escapeHtml(b.code)}</span></small>
-            <button class="link-danger" data-cancel="${i}">Cancel booking</button>
+            ${canCancel ? `<button class="link-danger" data-cancel="${i}">Cancel booking</button>` : !past && !cancelled ? `<small class="muted">Free cancellation ended 30 minutes before the start.</small>` : ""}
           </div>`;
         }).join("")
       : `<p class="muted">No bookings yet. Find a spot and reserve it in seconds.</p>`;
   }
 
-  $("#bookingsList").addEventListener("click", (e) => {
+  $("#bookingsList").addEventListener("click", async (e) => {
     const i = e.target.dataset.cancel;
     if (i === undefined) return;
-    const list = loadBookings();
-    const target = list[Number(i)];
-    if (target && target.server && API.online) {
-      fetch(`/api/bookings/${encodeURIComponent(target.code)}/cancel`, {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plate: target.plate }),
-      }).then((r) => { if (!r.ok && r.status !== 409) toast("The server couldn't cancel it. Try again."); }).catch(() => toast("Couldn't reach the server."));
+    const target = shownBookings[Number(i)];
+    if (!target) return;
+    e.target.disabled = true;
+    if (PKAuth.mode === "server") {
+      const r = await PKAuth.api("POST", `/api/account/bookings/${encodeURIComponent(target.code)}/cancel`, {});
+      if (!r.ok) { toast(r.data.error || "Couldn't cancel it. Try again."); e.target.disabled = false; return; }
+    } else {
+      saveBookings(loadBookings().filter((b) => b.code !== target.code));
+      const p = parkings.find((x) => x.id === target.parkingId);
+      if (p) { p.free = Math.min(p.total, p.free + 1); markers[p.id].setIcon(pinIcon(p)).setPopupContent(popupHtml(p)); }
     }
-    const [removed] = list.splice(Number(i), 1);
-    const p = parkings.find((x) => x.id === removed.parkingId);
-    if (p) {
-      p.free = Math.min(p.total, p.free + 1);
-      markers[p.id].setIcon(pinIcon(p)).setPopupContent(popupHtml(p));
-    }
-    saveBookings(list);
-    renderBookings();
+    await renderBookings();
+    refreshCount();
     render();
-    toast("Booking cancelled.");
+    toast(`Booking ${target.code} cancelled.`);
   });
 
   $("#openBookings").addEventListener("click", (e) => {
     e.preventDefault();
-    renderBookings();
-    $("#bookingsModal").hidden = false;
     $("#navLinks").classList.remove("open");
+    PKAuth.require(() => { $("#bookingsModal").hidden = false; renderBookings(); }, "Sign in to see your bookings.");
   });
+  if (window.PKAuth) PKAuth.onChange(() => refreshCount());
 
   document.querySelectorAll(".modal").forEach((m) =>
     m.addEventListener("click", (e) => {

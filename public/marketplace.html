@@ -32,6 +32,7 @@
   <link rel="stylesheet" href="fonts.css">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
   <link rel="stylesheet" href="marketplace.css">
+  <link rel="stylesheet" href="auth.css">
 </head>
 <body>
   <header class="nav">
@@ -44,7 +45,8 @@
         <a href="#faq">FAQ</a>
         <a href="/parking">All car parks</a>
         <a href="/">For garages</a>
-        <a href="#" class="btn btn-ghost" id="openBookings">My bookings <span class="badge" id="bookingCount">0</span></a>
+        <a href="#" class="btn btn-ghost" id="openBookings">My bookings <span class="badge" id="bookingCount" hidden>0</span></a>
+        <div class="auth-slot" data-auth-slot></div>
       </nav>
       <button class="menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
     </div>
@@ -160,7 +162,7 @@
         <div class="step"><span>1</span><h3>Search</h3><p>Pick a neighbourhood or use your location to see nearby garages with live free spots.</p></div>
         <div class="step"><span>2</span><h3>Reserve</h3><p>Choose start time and duration and add your plate. The garage has your plate before you arrive.</p></div>
         <div class="step"><span>3</span><h3>Park</h3><p>Parkareto garages read your plate at the gate, so the barrier opens for you.</p></div>
-        <div class="step"><span>4</span><h3>Manage</h3><p>See or cancel your bookings under My bookings. Receipts are issued by the garage through myDATA.</p></div>
+        <div class="step"><span>4</span><h3>Manage</h3><p>Sign in to see or cancel your bookings. Two-step sign-in keeps your account safe.</p></div>
       </div>
       <div class="app-cta">
         <div>
@@ -191,6 +193,7 @@
       <div><a href="/" class="brand"><img class="logo-img" src="assets/logo.svg" alt="" width="70" height="42"><span class="brand-t"><b class="chrome">PARKARETO</b><small>Marketplace · Athens</small></span></a><p>Live parking availability at Parkareto garages across Athens.</p></div>
       <div><b>Areas</b><p>Syntagma · Plaka · Kolonaki · Piraeus · Glyfada · Kifisia</p></div>
       <div><b>For garages</b><p><a href="/">Parkareto</a><br><a href="/#pricing">Plans &amp; pricing</a><br>sales@parkareto.example</p></div>
+      <div><b>Legal</b><p><a href="privacy.html">Privacy Policy</a><br><a href="terms.html">Terms of Use</a></p></div>
     </div>
     <div class="container copy">© <span id="year"></span> Parkareto. Demo data — locations, prices and availability are illustrative.</div>
   </footer>
@@ -215,8 +218,9 @@
             <option value="72">3 days</option><option value="168">1 week</option>
           </select>
         </label>
-        <label>License plate<input type="text" id="bPlate" placeholder="ΙΚΧ-1234" required maxlength="12"></label>
-        <label>Email for receipt<input type="email" id="bEmail" placeholder="you@example.com"></label>
+        <label>License plate<input type="text" id="bPlate" placeholder="ΙΚΧ-1234" required maxlength="12" list="plateList" autocomplete="off"></label>
+        <datalist id="plateList"></datalist>
+        <p class="who" id="bWho"></p>
         <div class="total"><span>Total</span><strong id="bTotal">€0.00</strong></div>
         <button class="btn btn-primary full" type="submit">Confirm reservation</button>
       </form>
@@ -228,6 +232,7 @@
     <div class="modal-box">
       <button class="close" data-close>×</button>
       <h3>My bookings</h3>
+      <p class="muted" id="bookingsWho"></p>
       <div id="bookingsList"></div>
     </div>
   </div>
@@ -247,6 +252,8 @@
 
   <script src="vendor/leaflet/leaflet.js"></script>
   <script src="data.js"></script>
+  <script src="vendor/qrcode/qrcode.js"></script>
+  <script src="auth.js"></script>
   <script src="marketplace.js"></script>
 </body>
 </html>

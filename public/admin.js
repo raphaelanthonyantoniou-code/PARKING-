@@ -40,6 +40,7 @@
       ["New demo requests", summary.new_leads], ["Requests, last 7 days", summary.leads_7d],
       ["Active bookings", summary.active_bookings], ["Booked revenue", euro(summary.booked_revenue)],
       ["Free spaces now", `${summary.free_spaces} / ${summary.total_spaces}`],
+      ["Driver accounts", `${summary.users} (${summary.users_app_2fa} with app 2FA)`],
     ].map(([k, v]) => `<div class="kpi"><small>${k}</small><b>${esc(v)}</b></div>`).join("");
     renderLeads(); renderBookings(); renderGarages();
   }

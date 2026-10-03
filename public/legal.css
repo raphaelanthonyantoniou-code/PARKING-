@@ -1,0 +1,11 @@
+.legal { width: min(820px, 100% - 32px); margin: 0 auto; padding: 48px 0 90px; }
+.legal h1 { font: 800 clamp(28px, 4vw, 40px)/1.1 var(--display); letter-spacing: -.02em; margin: 0 0 8px; }
+.legal .upd { color: var(--muted); margin: 0 0 28px; }
+.legal h2 { font: 700 20px var(--display); margin: 34px 0 10px; }
+.legal p, .legal li { color: #c3cbd8; line-height: 1.7; }
+.legal ul { padding-left: 20px; }
+.legal table { width: 100%; border-collapse: collapse; font-size: 14.5px; margin: 10px 0; }
+.legal th, .legal td { text-align: left; padding: 10px; border-bottom: 1px solid var(--line); vertical-align: top; color: #c3cbd8; }
+.legal th { color: var(--muted); font-size: 12.5px; text-transform: uppercase; letter-spacing: .06em; }
+.legal .ph { color: var(--amber-2); background: rgba(246,183,11,.08); border-radius: 4px; padding: 0 4px; }
+.legal .tbl { overflow-x: auto; }

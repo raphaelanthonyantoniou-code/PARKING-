@@ -60,7 +60,7 @@ function layout({ site, path, title, description, body, ld = [], extraHead = "" 
     <div class="container footer-inner">
       <div><a href="/" class="brand"><img class="logo-img" src="/assets/logo.svg" alt="" width="67" height="40"><span class="brand-t"><b class="chrome">PARKARETO</b><small>Parking in Athens</small></span></a><p>Live parking availability at Parkareto garages across Athens.</p></div>
       <div><b>Drivers</b><p><a href="/marketplace">Find parking</a><br><a href="/parking">All car parks</a></p></div>
-      <div><b>Garages</b><p><a href="/">Parkareto for operators</a><br><a href="/#pricing">Plans &amp; pricing</a></p></div>
+      <div><b>Garages</b><p><a href="/">Parkareto for operators</a><br><a href="/#pricing">Plans &amp; pricing</a><br><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></p></div>
     </div>
     <div class="container copy">© ${new Date().getFullYear()} Parkareto.</div>
   </footer>
@@ -179,14 +179,14 @@ function hubPage(site, all) {
 
 function sitemap(site, all) {
   const today = new Date().toISOString().slice(0, 10);
-  const urls = [["/", "1.0", "weekly"], ["/marketplace", "0.9", "daily"], ["/parking", "0.8", "daily"]]
+  const urls = [["/", "1.0", "weekly"], ["/marketplace", "0.9", "daily"], ["/parking", "0.8", "daily"], ["/privacy", "0.2", "yearly"], ["/terms", "0.2", "yearly"]]
     .map(([p, pr, cf]) => `<url><loc>${site}${p}</loc><lastmod>${today}</lastmod><changefreq>${cf}</changefreq><priority>${pr}</priority></url>`)
     .concat(all.map((g) => `<url><loc>${site}/parking/${g.slug}</loc><lastmod>${g.updated_at.slice(0, 10)}</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>`));
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>\n`;
 }
 
 function robots(site) {
-  return `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin\n\nSitemap: ${site}/sitemap.xml\n`;
+  return `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin\nDisallow: /account\n\nSitemap: ${site}/sitemap.xml\n`;
 }
 
 module.exports = { garagePage, hubPage, sitemap, robots, esc };
