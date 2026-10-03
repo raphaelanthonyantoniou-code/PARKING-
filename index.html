@@ -2,216 +2,516 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ParkAthens — Parking Manager</title>
-  <meta name="description" content="Find, book and manage parking across Athens with ParkAthens, the Parking Manager app.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230d5eaf'/><text x='50' y='72' font-size='64' font-family='Arial' font-weight='700' text-anchor='middle' fill='white'>P</text></svg>">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SINA Parking</title>
+  <meta name="description" content="SINA Parking is the smart parking system for Greek car parks: ANPR entry, live floor maps, tickets, subscribers, payments, CCTV and myDATA e-invoicing in one control room.">
+  <meta name="theme-color" content="#070b14">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%23111827'/><path d='M50 22 80 76H20z' fill='%23f6b70b'/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="landing.css">
 </head>
 <body>
-  <header class="nav">
-    <div class="container nav-inner">
-      <a href="#" class="brand"><span class="logo">P</span> Park<b>Athens</b></a>
-      <nav class="nav-links" id="navLinks">
-        <a href="#find">Find parking</a>
-        <a href="#zones">Street parking</a>
-        <a href="#how">How it works</a>
+  <!-- Icon sprite -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+      <symbol id="i-p" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></symbol>
+      <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></symbol>
+      <symbol id="i-car" viewBox="0 0 24 24"><path d="M5 16h14v-3.5L17 8H7l-2 4.5z"/><path d="M3 12h2M19 12h2"/><circle cx="8" cy="16.5" r="1.6"/><circle cx="16" cy="16.5" r="1.6"/></symbol>
+      <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a2 2 0 0 0 0-4z"/><path d="M13 6v2M13 11v2M13 16v2"/></symbol>
+      <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01"/></symbol>
+      <symbol id="i-id" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="12" r="2"/><path d="M14 10h4M14 14h4"/></symbol>
+      <symbol id="i-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></symbol>
+      <symbol id="i-video" viewBox="0 0 24 24"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m16 10 6-3v10l-6-3"/></symbol>
+      <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M8 17v-5M12 17V8M16 17v-8"/></symbol>
+      <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></symbol>
+      <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+      <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M16 3.5a4 4 0 0 1 0 8M22 21a6 6 0 0 0-4-5.6"/></symbol>
+      <symbol id="i-cog" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/></symbol>
+      <symbol id="i-scan" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/></symbol>
+      <symbol id="i-qr" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM21 14v.01M14 21h.01M17 21h4v-4"/></symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+      <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></symbol>
+      <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21a2 2 0 0 0 4 0"/></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+      <symbol id="i-in" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></symbol>
+      <symbol id="i-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
+      <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.3-7-12a7 7 0 0 1 14 0c0 5.7-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
+    </defs>
+  </svg>
+
+  <div class="bg-fx" aria-hidden="true"><i class="orb o1"></i><i class="orb o2"></i><i class="orb o3"></i><i class="lanes"></i></div>
+
+  <header class="nav" id="nav">
+    <div class="wrap nav-in">
+      <a href="#top" class="logo" aria-label="SINA Parking home">
+        <span class="logo-mark"><i></i></span>
+        <span class="logo-text"><b>S<em>I</em>NA</b> PARKING<small>Smart Parking System</small></span>
+      </a>
+      <nav class="links" id="links">
+        <a href="#features">Features</a>
+        <a href="#flow">How it works</a>
+        <a href="#mydata">myDATA</a>
+        <a href="#pricing">Pricing</a>
+        <a href="marketplace.html">Marketplace</a>
         <a href="#faq">FAQ</a>
-        <a href="#" class="btn btn-ghost" id="openBookings">My bookings <span class="badge" id="bookingCount">0</span></a>
+        <a href="#demo" class="btn btn-amber sm">Book a demo</a>
       </nav>
-      <button class="menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
+      <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false"><span></span><span></span></button>
     </div>
   </header>
 
-  <section class="hero">
-    <div class="container hero-inner">
-      <div class="hero-copy">
-        <span class="eyebrow">Αθήνα · Parking Manager</span>
-        <h1>Park smarter in <span class="accent">Athens</span>.</h1>
-        <p>Live availability in garages from Syntagma to Piraeus. Reserve a spot in seconds, pay by the hour, and never circle the block again.</p>
-        <form class="search" id="heroSearch">
-          <input type="text" id="heroQuery" placeholder="Where to? e.g. Plaka, Kolonaki, Piraeus…" list="areaList" autocomplete="off">
-          <datalist id="areaList"></datalist>
-          <button class="btn btn-primary" type="submit">Find parking</button>
-        </form>
-        <div class="stats">
-          <div><strong id="statGarages">0</strong><span>locations</span></div>
-          <div><strong id="statFree">0</strong><span>free spots now</span></div>
-          <div><strong>€1.50</strong><span>from / hour</span></div>
+  <main id="top">
+    <!-- HERO -->
+    <section class="hero">
+      <div class="wrap">
+        <div class="hero-copy">
+          <span class="pill"><i class="live-dot"></i> Smart Parking System · Built for Greece</span>
+          <h1>Your car park,<br><span class="glow">on autopilot.</span></h1>
+          <p class="lead">Number-plate recognition at the gate, a live map of every bay, tickets, subscribers, payments, CCTV and automatic <b>myDATA / AADE</b> receipts. One fast, dark control room for the whole operation.</p>
+          <div class="cta-row">
+            <a href="#demo" class="btn btn-amber">Book a live demo <svg><use href="#i-arrow"/></svg></a>
+            <a href="#pricing" class="btn btn-glass">See plans &amp; pricing</a>
+          </div>
+          <ul class="proof">
+            <li><svg><use href="#i-scan"/></svg> ANPR entry &amp; exit</li>
+            <li><svg><use href="#i-qr"/></svg> QR / barcode tickets</li>
+            <li><svg><use href="#i-file"/></svg> myDATA ready</li>
+            <li><svg><use href="#i-grid"/></svg> Multi-floor designer</li>
+          </ul>
+        </div>
+
+        <!-- Live dashboard mock -->
+        <div class="stage" id="stage">
+          <div class="device" id="device">
+            <div class="d-top">
+              <span class="dots"><i></i><i></i><i></i></span>
+              <span class="d-brand"><span class="logo-mark xs"><i></i></span><b>S<em>I</em>NA</b> PARKING</span>
+              <span class="d-search"><svg><use href="#i-search"/></svg> Search plate / ticket</span>
+              <span class="d-user"><svg><use href="#i-bell"/></svg><i class="avatar"></i>Admin</span>
+            </div>
+            <div class="d-body">
+              <aside class="d-side">
+                <span class="on"><svg><use href="#i-home"/></svg>Dashboard</span>
+                <span><svg><use href="#i-p"/></svg>Live Parking</span>
+                <span><svg><use href="#i-grid"/></svg>Floor Designer</span>
+                <span><svg><use href="#i-car"/></svg>Vehicles</span>
+                <span><svg><use href="#i-ticket"/></svg>Tickets</span>
+                <span><svg><use href="#i-cal"/></svg>Reservations</span>
+                <span><svg><use href="#i-id"/></svg>Subscribers</span>
+                <span><svg><use href="#i-card"/></svg>Payments</span>
+                <span><svg><use href="#i-video"/></svg>CCTV Monitor</span>
+                <span><svg><use href="#i-chart"/></svg>Accounting</span>
+                <span><svg><use href="#i-file"/></svg>myDATA / AADE</span>
+                <div class="d-session"><small>Active Session</small><b id="mockClock">00:43:07</b></div>
+              </aside>
+              <div class="d-main">
+                <div class="d-gate">
+                  <b>Manual gate</b>
+                  <span class="seg"><i class="on-g"><svg><use href="#i-in"/></svg>Entry</i><i><svg><use href="#i-out"/></svg>Exit</i></span>
+                  <span class="plate-in" id="gatePlate">PLATE</span>
+                  <span class="rec">Record Entry</span>
+                </div>
+                <div class="d-stats">
+                  <div class="st blue"><small>Total Spaces</small><b id="mTotal">48</b><em>View all zones</em></div>
+                  <div class="st green"><small>Available</small><b id="mFree">19</b><em id="mFreePct">39.6% available</em></div>
+                  <div class="st orange"><small>Occupied</small><b id="mOcc">29</b><em id="mOccPct">60.4% occupied</em></div>
+                  <div class="st violet"><small>Today Revenue</small><b id="mRev">€1,284.50</b><em id="mIO">212 in · 183 out</em></div>
+                </div>
+                <div class="d-row">
+                  <div class="panel">
+                    <div class="p-head">Parking Overview <span class="chip-sm">Όροφος 1</span></div>
+                    <div class="lot" id="lot"></div>
+                    <div class="legend"><span><i class="g"></i>Available</span><span><i class="o"></i>Occupied</span><span><i class="r"></i>Reserved</span><span><i class="b"></i>Disabled</span></div>
+                  </div>
+                  <div class="panel">
+                    <div class="p-head">Recent Vehicles <span class="amber-t">View all</span></div>
+                    <ul class="recent" id="recent"></ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="float f1"><svg><use href="#i-scan"/></svg><div><small>ANPR · Lane 1</small><b id="floatPlate">ΙΚΧ-4821</b></div><em>99.2%</em></div>
+          <div class="float f2"><svg><use href="#i-file"/></svg><div><small>myDATA</small><b>Receipt transmitted</b></div><em class="ok">✓</em></div>
         </div>
       </div>
-      <div class="hero-card" aria-hidden="true">
-        <div class="phone">
-          <div class="phone-top"></div>
-          <div class="phone-screen">
-            <div class="ps-head">Active session</div>
-            <div class="ps-place">Syntagma Square Garage</div>
-            <div class="ps-timer" id="demoTimer">01:24:07</div>
-            <div class="ps-row"><span>Plate</span><b>ΙΚΧ-4821</b></div>
-            <div class="ps-row"><span>Rate</span><b>€4.00 / h</b></div>
-            <div class="ps-bar"><i></i></div>
-            <div class="ps-btn">Extend +30 min</div>
+    </section>
+
+    <!-- MODULE MARQUEE -->
+    <div class="marquee" aria-hidden="true">
+      <div class="track">
+        <span>Live Parking</span><span>Floor Designer</span><span>ANPR</span><span>Tickets</span><span>Reservations</span><span>Subscribers</span><span>Payments</span><span>CCTV Monitor</span><span>Accounting</span><span>myDATA / AADE</span><span>Activity Log</span><span>Users &amp; Roles</span>
+        <span>Live Parking</span><span>Floor Designer</span><span>ANPR</span><span>Tickets</span><span>Reservations</span><span>Subscribers</span><span>Payments</span><span>CCTV Monitor</span><span>Accounting</span><span>myDATA / AADE</span><span>Activity Log</span><span>Users &amp; Roles</span>
+      </div>
+    </div>
+
+    <!-- ANPR LIVE -->
+    <section class="sec" id="anpr">
+      <div class="wrap split">
+        <div class="sec-copy">
+          <span class="kicker">Gate automation</span>
+          <h2>The barrier opens before the driver reaches for a ticket.</h2>
+          <p>SINA reads the plate, checks it against subscribers and reservations, issues a ticket and opens the barrier. When a plate can't be read, the operator types it at the manual gate. At the exit, a USB or Bluetooth scanner reads the ticket QR from any screen, with no field to click first.</p>
+          <ul class="ticks">
+            <li><svg><use href="#i-check"/></svg>Greek and foreign plates, Latin and Greek characters</li>
+            <li><svg><use href="#i-check"/></svg>Subscribers and reservations recognised at the gate</li>
+            <li><svg><use href="#i-check"/></svg>Manual override logged in the activity trail</li>
+          </ul>
+        </div>
+        <div class="anpr">
+          <div class="cam">
+            <div class="cam-hud"><span><i class="rec-dot"></i>CAM-01 · ENTRY</span><span id="camTime">22:41:07</span></div>
+            <div class="car-front">
+              <div class="windshield"></div>
+              <div class="grille"></div>
+              <div class="lights"><i></i><i></i></div>
+              <div class="eu-plate" id="plateBox">
+                <span class="eu"><small>★</small>GR</span>
+                <b id="plateText">XHT-6666</b>
+                <i class="bbox"></i>
+              </div>
+            </div>
+            <i class="laser"></i>
+          </div>
+          <div class="console" id="console" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURES BENTO -->
+    <section class="sec" id="features">
+      <div class="wrap">
+        <div class="sec-head">
+          <span class="kicker">Everything in one control room</span>
+          <h2>Twelve modules. Zero spreadsheets.</h2>
+          <p>Every screen your team needs, from the gate to the accountant, sharing the same live data.</p>
+        </div>
+        <div class="bento">
+          <article class="tile t-wide">
+            <div class="t-ic"><svg><use href="#i-grid"/></svg></div>
+            <h3>Floor Designer</h3>
+            <p>Draw your floors, zones, bays and driving lanes. Mark bays as reserved, disabled or EV. Click a bay below to cycle its type.</p>
+            <div class="designer" id="designer"></div>
+          </article>
+          <article class="tile">
+            <div class="t-ic"><svg><use href="#i-p"/></svg></div>
+            <h3>Live Parking</h3>
+            <p>A real-time map of every bay, floor by floor, with how many cars are inside right now.</p>
+            <div class="mini-meter"><i id="liveMeter" style="width:60%"></i></div>
+          </article>
+          <article class="tile">
+            <div class="t-ic"><svg><use href="#i-ticket"/></svg></div>
+            <h3>Tickets</h3>
+            <p>Numbered tickets with QR and barcode. Duration and amount calculated automatically at exit.</p>
+            <code class="tk">#TK-00418 · 2h 14m · €6.00</code>
+          </article>
+          <article class="tile">
+            <div class="t-ic"><svg><use href="#i-cal"/></svg></div>
+            <h3>Reservations</h3>
+            <p>Hold bays for a date and time. The reserved plate is let in automatically.</p>
+          </article>
+          <article class="tile">
+            <div class="t-ic"><svg><use href="#i-id"/></svg></div>
+            <h3>Subscribers</h3>
+            <p>Monthly and annual passes with plate whitelists, renewal reminders and company accounts.</p>
+          </article>
+          <article class="tile">
+            <div class="t-ic"><svg><use href="#i-card"/></svg></div>
+            <h3>Payments</h3>
+            <p>Cash, card and subscription payments in one ledger, with a status on every ticket.</p>
+          </article>
+          <article class="tile t-tall">
+            <div class="t-ic"><svg><use href="#i-video"/></svg></div>
+            <h3>CCTV Monitor</h3>
+            <p>Watch entry, exit and floor cameras next to the gate events they belong to.</p>
+            <div class="cctv">
+              <div class="feed"><span>ENTRY</span><i class="scan"></i></div>
+              <div class="feed"><span>EXIT</span><i class="scan d2"></i></div>
+              <div class="feed"><span>LEVEL −1</span><i class="scan d3"></i></div>
+              <div class="feed"><span>RAMP</span><i class="scan d4"></i></div>
+            </div>
+          </article>
+          <article class="tile t-wide">
+            <div class="t-ic"><svg><use href="#i-chart"/></svg></div>
+            <h3>Accounting</h3>
+            <p>Revenue by day, week and month, entries and exits per hour, and per-zone occupancy. Export it for your accountant.</p>
+            <div class="bars" id="bars"></div>
+          </article>
+          <article class="tile">
+            <div class="t-ic"><svg><use href="#i-car"/></svg></div>
+            <h3>Vehicles</h3>
+            <p>Full history per plate: visits, tickets, payments and notes.</p>
+          </article>
+          <article class="tile">
+            <div class="t-ic"><svg><use href="#i-pulse"/></svg></div>
+            <h3>Activity</h3>
+            <p>Every gate opening, override, refund and edit, with who did it and when.</p>
+          </article>
+          <article class="tile">
+            <div class="t-ic"><svg><use href="#i-users"/></svg></div>
+            <h3>Users &amp; Roles</h3>
+            <p>Admins, cashiers and gate operators each see only what they need. Lock the screen in one click.</p>
+          </article>
+          <article class="tile">
+            <div class="t-ic"><svg><use href="#i-db"/></svg></div>
+            <h3>Backups</h3>
+            <p>Export a full data backup whenever you want and restore it on a new machine.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- FLOW -->
+    <section class="sec" id="flow">
+      <div class="wrap">
+        <div class="sec-head">
+          <span class="kicker">How a visit runs</span>
+          <h2>From the entry lane to the tax office, untouched.</h2>
+        </div>
+        <ol class="flow">
+          <li><span class="n">1</span><svg><use href="#i-scan"/></svg><h3>Arrive</h3><p>The camera reads the plate and checks subscribers and reservations.</p></li>
+          <li><span class="n">2</span><svg><use href="#i-ticket"/></svg><h3>Ticket</h3><p>A ticket is issued and the barrier opens. The bay map updates.</p></li>
+          <li><span class="n">3</span><svg><use href="#i-p"/></svg><h3>Park</h3><p>Occupancy, revenue and the dashboard update live.</p></li>
+          <li><span class="n">4</span><svg><use href="#i-card"/></svg><h3>Pay</h3><p>Cash, card or subscription. The amount follows your tariff.</p></li>
+          <li><span class="n">5</span><svg><use href="#i-qr"/></svg><h3>Exit</h3><p>Scan the ticket QR or read the plate, and the barrier opens.</p></li>
+          <li><span class="n">6</span><svg><use href="#i-file"/></svg><h3>Report</h3><p>The receipt goes to myDATA and into your accounting.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- MYDATA -->
+    <section class="sec" id="mydata">
+      <div class="wrap split rev">
+        <div class="receipt-wrap">
+          <div class="receipt">
+            <div class="r-head"><span class="logo-mark xs"><i></i></span><b>SINA PARKING</b><small>ΑΠΟΔΕΙΞΗ ΠΑΡΟΧΗΣ ΥΠΗΡΕΣΙΩΝ</small></div>
+            <div class="r-row"><span>Ticket</span><b>#TK-00418</b></div>
+            <div class="r-row"><span>Plate</span><b>XHT-6666</b></div>
+            <div class="r-row"><span>Entry</span><b>20:55</b></div>
+            <div class="r-row"><span>Exit</span><b>23:09</b></div>
+            <div class="r-row"><span>Duration</span><b>2h 14m</b></div>
+            <hr>
+            <div class="r-row"><span>Net</span><b>€4.84</b></div>
+            <div class="r-row"><span>ΦΠΑ 24%</span><b>€1.16</b></div>
+            <div class="r-row big"><span>Total</span><b>€6.00</b></div>
+            <hr>
+            <div class="r-mark"><div><small>ΜΑΡΚ</small><b>400001928374651</b></div><div class="qr" aria-hidden="true"></div></div>
+            <div class="r-ok"><svg><use href="#i-check"/></svg> Transmitted to AADE</div>
           </div>
         </div>
+        <div class="sec-copy">
+          <span class="kicker">myDATA / AADE</span>
+          <h2>Receipts that file themselves.</h2>
+          <p>Every paid ticket becomes a receipt that is sent to AADE's myDATA platform and comes back with its ΜΑΡΚ. Subscriptions and company invoices with ΑΦΜ go through the same path. Your accountant opens SINA and finds the month ready.</p>
+          <ul class="ticks">
+            <li><svg><use href="#i-check"/></svg>Receipts and invoices with VAT (ΦΠΑ) broken out</li>
+            <li><svg><use href="#i-check"/></svg>Company details looked up from the ΑΦΜ</li>
+            <li><svg><use href="#i-check"/></svg>Failed transmissions flagged and retried</li>
+          </ul>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section id="find" class="section">
-    <div class="container">
-      <div class="section-head">
-        <h2>Find parking</h2>
-        <p>Availability updates every few seconds. Tap a marker or a card to reserve.</p>
+    <!-- NUMBERS -->
+    <section class="sec tight">
+      <div class="wrap nums">
+        <div><b data-count="24" data-suffix="/7">0</b><span>unattended gate operation</span></div>
+        <div><b data-count="12">0</b><span>modules in one app</span></div>
+        <div><b data-count="3">0</b><span>ways out: plate, QR or operator</span></div>
+        <div><b data-count="1">0</b><span>app for gate, cashier and accountant</span></div>
       </div>
-      <div class="filters">
-        <input type="search" id="query" placeholder="Search by name or neighbourhood">
-        <div class="chips" id="chips">
-          <button class="chip" data-f="covered">🏢 Covered</button>
-          <button class="chip" data-f="24h">🕐 24/7</button>
-          <button class="chip" data-f="ev">⚡ EV charging</button>
-          <button class="chip" data-f="accessible">♿ Accessible</button>
-          <button class="chip" data-f="valet">🔑 Valet</button>
-          <button class="chip" data-f="available">✅ Has free spots</button>
-        </div>
-        <select id="sort">
-          <option value="price">Sort: cheapest</option>
-          <option value="free">Sort: most free spots</option>
-          <option value="name">Sort: A → Z</option>
-          <option value="distance">Sort: nearest to me</option>
-        </select>
-      </div>
-      <div class="finder">
-        <div id="map" class="map"></div>
-        <div class="list" id="list"></div>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <section id="zones" class="section alt">
-    <div class="container">
-      <div class="section-head">
-        <h2>Street parking in central Athens</h2>
-        <p>Parking Manager also helps you pay for controlled on-street parking and stay on the right side of the rules.</p>
+    <!-- PRICING -->
+    <section class="sec" id="pricing">
+      <div class="wrap">
+        <div class="sec-head center">
+          <span class="kicker">Plans</span>
+          <h2>Pick the size of your car park.</h2>
+          <div class="billing" role="group" aria-label="Billing period">
+            <button class="on" data-bill="month" id="billMonth">Monthly</button>
+            <button data-bill="year" id="billYear">Yearly <em>2 months free</em></button>
+          </div>
+        </div>
+        <div class="plans">
+          <article class="plan">
+            <h3>Starter</h3>
+            <p class="for">Single-level lots and small garages</p>
+            <div class="price"><b data-m="49" data-y="490">€49</b><span class="per">/ month</span></div>
+            <a href="#demo" class="btn btn-glass full" data-plan="Starter">Start with Starter</a>
+            <ul>
+              <li><svg><use href="#i-check"/></svg>Up to 60 bays, 1 floor</li>
+              <li><svg><use href="#i-check"/></svg>1 entry + 1 exit lane</li>
+              <li><svg><use href="#i-check"/></svg>Live Parking &amp; Floor Designer</li>
+              <li><svg><use href="#i-check"/></svg>Tickets, QR exit, payments</li>
+              <li><svg><use href="#i-check"/></svg>myDATA receipts</li>
+              <li><svg><use href="#i-check"/></svg>2 user accounts</li>
+            </ul>
+          </article>
+          <article class="plan hot">
+            <span class="ribbon">Most popular</span>
+            <h3>Pro</h3>
+            <p class="for">Multi-floor garages with regulars</p>
+            <div class="price"><b data-m="129" data-y="1290">€129</b><span class="per">/ month</span></div>
+            <a href="#demo" class="btn btn-amber full" data-plan="Pro">Start with Pro</a>
+            <ul>
+              <li><svg><use href="#i-check"/></svg>Up to 400 bays, unlimited floors</li>
+              <li><svg><use href="#i-check"/></svg>Up to 4 ANPR lanes</li>
+              <li><svg><use href="#i-check"/></svg>Everything in Starter</li>
+              <li><svg><use href="#i-check"/></svg>Reservations &amp; Subscribers</li>
+              <li><svg><use href="#i-check"/></svg>CCTV Monitor &amp; Activity log</li>
+              <li><svg><use href="#i-check"/></svg>Accounting reports</li>
+              <li><svg><use href="#i-check"/></svg>Listing on the SINA Marketplace</li>
+              <li><svg><use href="#i-check"/></svg>10 user accounts with roles</li>
+            </ul>
+          </article>
+          <article class="plan">
+            <h3>Enterprise</h3>
+            <p class="for">Operators with several sites</p>
+            <div class="price"><b class="custom">Custom</b></div>
+            <a href="#demo" class="btn btn-glass full" data-plan="Enterprise">Talk to sales</a>
+            <ul>
+              <li><svg><use href="#i-check"/></svg>Unlimited bays, lanes and sites</li>
+              <li><svg><use href="#i-check"/></svg>Everything in Pro</li>
+              <li><svg><use href="#i-check"/></svg>Group reporting across sites</li>
+              <li><svg><use href="#i-check"/></svg>On-site installation &amp; training</li>
+              <li><svg><use href="#i-check"/></svg>Priority support line</li>
+              <li><svg><use href="#i-check"/></svg>Unlimited users</li>
+            </ul>
+          </article>
+        </div>
+        <div class="addons">
+          <span>Add-ons</span>
+          <div><b>Extra ANPR lane</b><em data-m="19" data-y="190">€19 / month</em></div>
+          <div><b>Extra CCTV channel</b><em data-m="9" data-y="90">€9 / month</em></div>
+          <div><b>SMS reminders</b><em>€0.06 / SMS</em></div>
+          <div><b>Hardware &amp; install</b><em>Quoted per site</em></div>
+        </div>
+        <p class="fine">Prices exclude ΦΠΑ 24%. Cameras, barriers and scanners are not included in the plan.</p>
       </div>
-      <div class="cards3">
-        <div class="info-card">
-          <div class="dot blue"></div>
-          <h3>Controlled parking zones</h3>
-          <p>Many central neighbourhoods use a controlled-parking system with resident and visitor spaces. Check street signs for hours and maximum stay, then start a session in the app.</p>
-        </div>
-        <div class="info-card">
-          <div class="dot red"></div>
-          <h3>Daktylios (traffic ring)</h3>
-          <p>The central Athens ring restricts private cars on certain weekdays based on plate number. Park outside it at a park &amp; ride and take the metro in.</p>
-        </div>
-        <div class="info-card">
-          <div class="dot green"></div>
-          <h3>Park &amp; Ride</h3>
-          <p>Cheap all-day parking near metro stations like Marousi and Neos Kosmos. Leave the car, ride Line 1, 2 or 3 to the centre.</p>
-        </div>
-      </div>
-      <div class="calc">
-        <h3>Quick cost estimator</h3>
-        <div class="calc-row">
-          <label>Location
-            <select id="calcPlace"></select>
-          </label>
-          <label>Duration: <b id="calcHoursLabel">2 h</b>
-            <input type="range" id="calcHours" min="1" max="24" value="2">
-          </label>
-          <div class="calc-out"><span>Estimated</span><strong id="calcOut">€0.00</strong></div>
-        </div>
-        <small>Daily cap applies automatically — you never pay more than the location's day rate.</small>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <section id="how" class="section">
-    <div class="container">
-      <div class="section-head"><h2>How it works</h2></div>
-      <div class="steps">
-        <div class="step"><span>1</span><h3>Search</h3><p>Pick a neighbourhood or use your location to see nearby garages with live free spots.</p></div>
-        <div class="step"><span>2</span><h3>Reserve</h3><p>Choose start time and duration, add your plate. Your spot is held for 15 minutes past arrival.</p></div>
-        <div class="step"><span>3</span><h3>Park</h3><p>ANPR cameras read your plate at the gate — no tickets, no queues.</p></div>
-        <div class="step"><span>4</span><h3>Manage</h3><p>Extend, cancel or get receipts for your business from the Parking Manager app.</p></div>
-      </div>
-      <div class="app-cta">
-        <div>
-          <h3>Get the Parking Manager app</h3>
-          <p>Reminders before your time runs out, saved vehicles, monthly passes and invoices (τιμολόγια) for companies.</p>
+    <!-- ESTIMATOR -->
+    <section class="sec" id="estimate">
+      <div class="wrap estimator">
+        <div class="sec-copy">
+          <span class="kicker">Revenue estimator</span>
+          <h2>What is your car park worth a month?</h2>
+          <p>Move the sliders to match your site. We'll suggest a plan.</p>
+          <div class="sliders">
+            <label for="eBays">Bays <b id="eBaysV">120</b><input type="range" id="eBays" min="10" max="800" step="10" value="120"></label>
+            <label for="eOcc">Average occupancy <b id="eOccV">55%</b><input type="range" id="eOcc" min="10" max="100" step="5" value="55"></label>
+            <label for="eRate">Hourly rate <b id="eRateV">€2.50</b><input type="range" id="eRate" min="0.5" max="8" step="0.5" value="2.5"></label>
+            <label for="eHours">Open hours per day <b id="eHoursV">14 h</b><input type="range" id="eHours" min="6" max="24" step="1" value="14"></label>
+          </div>
         </div>
-        <div class="stores">
-          <a class="store" href="#">▶ Google Play</a>
-          <a class="store" href="#"> App Store</a>
+        <div class="est-out">
+          <small>Estimated monthly parking revenue</small>
+          <b id="eOut">€0</b>
+          <div class="est-split">
+            <div><small>Per day</small><b id="eDay">€0</b></div>
+            <div><small>Car-hours / month</small><b id="eCarH">0</b></div>
+          </div>
+          <div class="est-plan"><small>Suggested plan</small><b id="ePlan">Pro</b><span id="ePlanWhy"></span></div>
+          <p class="fine">Estimate only: bays × occupancy × open hours × hourly rate × 30 days.</p>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section id="faq" class="section alt">
-    <div class="container narrow">
-      <div class="section-head"><h2>FAQ</h2></div>
-      <details><summary>Can I cancel a reservation?</summary><p>Yes — free cancellation up to 30 minutes before your start time, directly from “My bookings”.</p></details>
-      <details><summary>What if I stay longer than booked?</summary><p>Overtime is billed at the hourly rate, rounded to 15 minutes, and capped at the daily rate.</p></details>
-      <details><summary>Do you support Greek plates and foreign plates?</summary><p>Both. Enter the plate exactly as shown; Greek letters (e.g. ΙΚΧ) and Latin letters are both accepted.</p></details>
-      <details><summary>Can my company use ParkAthens?</summary><p>Yes. Business accounts get monthly invoicing with VAT number (ΑΦΜ), multiple drivers and spending limits.</p></details>
-      <details><summary>Is the airport covered?</summary><p>Yes, long-term parking at Athens International Airport can be booked for multiple days with the daily rate applied.</p></details>
-    </div>
-  </section>
+    <!-- MARKETPLACE -->
+    <section class="sec" id="market">
+      <div class="wrap market">
+        <div class="sec-copy">
+          <span class="kicker">SINA Marketplace</span>
+          <h2>Fill empty bays with drivers who are already looking.</h2>
+          <p>Pro and Enterprise garages can list their spaces on the SINA Marketplace. Drivers in Athens see live availability, book a bay and drive in. The plate is already in your system when they arrive.</p>
+          <a href="marketplace.html" class="btn btn-amber">Open the marketplace <svg><use href="#i-arrow"/></svg></a>
+        </div>
+        <a class="market-card" href="marketplace.html" aria-label="Open the SINA Marketplace">
+          <div class="mc-map">
+            <i class="mc-pin g" style="left:38%;top:42%">P</i>
+            <i class="mc-pin o" style="left:52%;top:30%">P</i>
+            <i class="mc-pin g" style="left:61%;top:55%">P</i>
+            <i class="mc-pin r" style="left:28%;top:62%">P</i>
+            <i class="mc-pin g" style="left:72%;top:38%">P</i>
+            <span class="mc-label" style="left:44%;top:50%">ACROPOLIS</span>
+            <span class="mc-label" style="left:58%;top:22%">KOLONAKI</span>
+          </div>
+          <div class="mc-row"><div><b>Syntagma Square Garage</b><small><svg><use href="#i-pin"/></svg>Syntagma · 41 free</small></div><span>€4.00/h</span></div>
+          <div class="mc-row"><div><b>Monastiraki Station Lot</b><small><svg><use href="#i-pin"/></svg>Monastiraki · 23 free</small></div><span>€3.00/h</span></div>
+        </a>
+      </div>
+    </section>
 
-  <footer class="footer">
-    <div class="container footer-inner">
-      <div><a href="#" class="brand"><span class="logo">P</span> Park<b>Athens</b></a><p>Parking Manager for Athens, Greece.</p></div>
-      <div><b>Areas</b><p>Syntagma · Plaka · Kolonaki · Piraeus · Glyfada · Kifisia</p></div>
-      <div><b>Contact</b><p>support@parkathens.example<br>Athens, Greece</p></div>
+    <!-- FAQ -->
+    <section class="sec" id="faq">
+      <div class="wrap narrow">
+        <div class="sec-head center"><span class="kicker">Questions</span><h2>Before you ask.</h2></div>
+        <details><summary>Which cameras and barriers does SINA work with?</summary><p>SINA connects to ANPR cameras and barrier controllers at your entry and exit lanes. Tell us what is installed today and we'll confirm compatibility before you sign up. We can also supply and install hardware.</p></details>
+        <details><summary>What happens if a plate can't be read?</summary><p>The gate operator types the plate at the manual gate and chooses Entry or Exit. The override is recorded in the Activity log with the user's name.</p></details>
+        <details><summary>How does the exit work without a cashier?</summary><p>The driver scans the ticket QR or barcode at the exit. A USB or Bluetooth scanner works from any screen in SINA, so nobody needs to click into a field first.</p></details>
+        <details><summary>Is myDATA transmission included?</summary><p>Yes, on every plan. Receipts are sent to AADE's myDATA and the ΜΑΡΚ is stored with the ticket. You need your own AADE credentials, which we help you set up.</p></details>
+        <details><summary>Can I design several floors?</summary><p>Yes. The Floor Designer supports multiple floors (Όροφος 1, 2, −1 …) and zones, with bay types for available, reserved and disabled spaces.</p></details>
+        <details><summary>Can I move my data or keep a backup?</summary><p>You can export a full backup at any time and restore it on another machine.</p></details>
+        <details><summary>Can I change plans later?</summary><p>Yes. Upgrade or downgrade from Settings; the new price applies from the next billing period.</p></details>
+      </div>
+    </section>
+
+    <!-- DEMO -->
+    <section class="sec" id="demo">
+      <div class="wrap">
+        <div class="demo">
+          <div class="sec-copy">
+            <span class="kicker">Book a demo</span>
+            <h2>See SINA running on your own floor plan.</h2>
+            <p>Send us your site details. We'll build your floors in the designer and walk you through a full entry-to-myDATA visit in 30 minutes.</p>
+            <ul class="ticks">
+              <li><svg><use href="#i-check"/></svg>Live online or at your site in Attica</li>
+              <li><svg><use href="#i-check"/></svg>Demo available in Greek or English</li>
+            </ul>
+          </div>
+          <form class="form" id="demoForm" novalidate>
+            <div class="f2">
+              <label for="fName">Name<input id="fName" name="name" required autocomplete="name" placeholder="Γιώργος Παπαδόπουλος"></label>
+              <label for="fCompany">Company<input id="fCompany" name="company" autocomplete="organization" placeholder="Parking company"></label>
+            </div>
+            <div class="f2">
+              <label for="fEmail">Email<input id="fEmail" name="email" type="email" required autocomplete="email" placeholder="you@company.gr"></label>
+              <label for="fPhone">Phone<input id="fPhone" name="phone" type="tel" autocomplete="tel" placeholder="+30 69…"></label>
+            </div>
+            <div class="f2">
+              <label for="fBays">Number of bays<input id="fBays" name="bays" type="number" min="1" placeholder="120"></label>
+              <label for="fPlan">Plan<select id="fPlan" name="plan"><option>Starter</option><option selected>Pro</option><option>Enterprise</option><option>Not sure yet</option></select></label>
+            </div>
+            <label for="fMsg">Anything we should know?<textarea id="fMsg" name="message" rows="3" placeholder="Floors, lanes, current cameras…"></textarea></label>
+            <button class="btn btn-amber full" type="submit">Request my demo <svg><use href="#i-arrow"/></svg></button>
+            <p class="form-msg" id="formMsg" role="status"></p>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-in">
+      <div>
+        <a href="#top" class="logo"><span class="logo-mark"><i></i></span><span class="logo-text"><b>S<em>I</em>NA</b> PARKING<small>Smart Parking System</small></span></a>
+        <p>Parking management software for garages and car parks in Greece.</p>
+      </div>
+      <div><b>Product</b><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="#mydata">myDATA / AADE</a><a href="marketplace.html">Marketplace</a></div>
+      <div><b>Company</b><a href="#demo">Book a demo</a><a href="#faq">FAQ</a><span>sales@sinaparking.example</span><span>Athens, Greece</span></div>
     </div>
-    <div class="container copy">© <span id="year"></span> ParkAthens. Demo data — locations, prices and availability are illustrative.</div>
+    <div class="wrap copy">© <span id="year"></span> SINA Parking. Screens and figures on this page are illustrative.</div>
   </footer>
 
-  <!-- Booking modal -->
-  <div class="modal" id="bookModal" hidden>
-    <div class="modal-box">
-      <button class="close" data-close>×</button>
-      <h3 id="bookTitle">Reserve</h3>
-      <p class="muted" id="bookArea"></p>
-      <form id="bookForm">
-        <div class="grid2">
-          <label>Date<input type="date" id="bDate" required></label>
-          <label>Start time<input type="time" id="bTime" required></label>
-        </div>
-        <label>Duration
-          <select id="bHours">
-            <option value="1">1 hour</option><option value="2" selected>2 hours</option>
-            <option value="3">3 hours</option><option value="4">4 hours</option>
-            <option value="6">6 hours</option><option value="8">8 hours</option>
-            <option value="12">12 hours</option><option value="24">1 day</option>
-            <option value="72">3 days</option><option value="168">1 week</option>
-          </select>
-        </label>
-        <label>License plate<input type="text" id="bPlate" placeholder="ΙΚΧ-1234" required maxlength="12"></label>
-        <label>Email for receipt<input type="email" id="bEmail" placeholder="you@example.com"></label>
-        <div class="total"><span>Total</span><strong id="bTotal">€0.00</strong></div>
-        <button class="btn btn-primary full" type="submit">Confirm reservation</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Bookings drawer -->
-  <div class="modal" id="bookingsModal" hidden>
-    <div class="modal-box">
-      <button class="close" data-close>×</button>
-      <h3>My bookings</h3>
-      <div id="bookingsList"></div>
-    </div>
-  </div>
-
-  <div class="toast" id="toast"></div>
-
-  <script src="vendor/leaflet/leaflet.js"></script>
-  <script src="data.js"></script>
-  <script src="app.js"></script>
+  <script src="landing.js"></script>
 </body>
 </html>

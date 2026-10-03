@@ -1,13 +1,12 @@
-# ParkAthens — Parking Manager website
+# SINA Parking website
 
-A static website for the Parking Manager app, covering parking across Athens, Greece.
+The marketing site for **SINA Parking**, the smart parking system, plus the **SINA Marketplace**, a public page where drivers in Athens find and book parking at SINA garages.
 
-## Features
-- **Live map** (Leaflet + OpenStreetMap) with 18 sample garages from Syntagma, Plaka and Kolonaki out to Piraeus, Glyfada, Kifisia and the airport. Pins are colour-coded by availability.
-- **Search & filters**: neighbourhood search, covered / 24/7 / EV / accessible / valet / has-free-spots chips, and sorting by price, free spots, name or distance from you (uses geolocation).
-- **Reservations**: pick a date, time, duration and plate (Greek or Latin letters). The price uses the hourly rate, capped at the daily rate. Bookings are saved in the browser under **My bookings**, where you can cancel them.
-- **Street parking info**: controlled zones, Daktylios (traffic ring) and Park & Ride, plus a cost estimator.
-- Simulated live availability updates, responsive layout and a mobile menu.
+## Pages
+| Page | What it is |
+|---|---|
+| `index.html` | Landing page for the app: live dashboard demo, ANPR scanner demo, the 12 modules, the visit flow, myDATA / AADE receipts, plans and pricing (monthly / yearly), a revenue estimator, a marketplace preview, FAQ and a demo request form. |
+| `marketplace.html` | Driver marketplace: live map of Athens car parks (dark map tiles), search and filters, reservations, My bookings, street-parking info and a cost estimator. |
 
 ## Run locally
 No build step. Serve the folder with any static server:
@@ -18,10 +17,13 @@ python3 -m http.server 8000
 ```
 
 ## Files
-- `index.html`: page markup
-- `styles.css`: styles
-- `app.js`: map, filters, booking logic
-- `data.js`: parking locations (edit this file or replace it with your app's API)
+- `index.html`, `landing.css`, `landing.js`: landing page
+- `marketplace.html`, `marketplace.css`, `marketplace.js`: marketplace
+- `data.js`: marketplace car parks (replace with your API)
 - `vendor/leaflet/`: bundled Leaflet 1.9.4 (BSD-2-Clause)
 
-> Locations, prices and availability are demo data.
+## Before going live
+- **Pricing**: the plan prices, limits and add-ons in `index.html` (`#pricing`) are placeholders. Set your real ones. The yearly price is in each `data-y` attribute.
+- **Demo form**: it opens the visitor's email app addressed to `sales@sinaparking.example`. Change the address in `landing.js`, or point the form at your CRM or backend.
+- **Marketplace data**: `data.js` is sample data and availability changes are simulated. Bookings are saved only in the visitor's browser.
+- **Contact details** in both footers are placeholders.

@@ -3,7 +3,7 @@
 
   const parkings = window.PARKINGS;
   const ATHENS = [37.9838, 23.7275];
-  const STORE_KEY = "parkathens.bookings";
+  const STORE_KEY = "sina.marketplace.bookings";
   const FEATURE_LABELS = { covered: "Covered", "24h": "24/7", ev: "EV", accessible: "Accessible", valet: "Valet" };
 
   const $ = (sel) => document.querySelector(sel);
@@ -53,9 +53,10 @@
 
   // ---------- Map ----------
   const map = L.map("map", { scrollWheelZoom: false }).setView(ATHENS, 13);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
     maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    subdomains: "abcd",
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
   }).addTo(map);
 
   const markers = {};
@@ -113,7 +114,7 @@
           const occ = Math.round(((p.total - p.free) / p.total) * 100);
           return `<article class="card ${p.id === state.activeId ? "active" : ""}" data-id="${p.id}">
             <div class="card-top">
-              <div><h3>${escapeHtml(p.name)}</h3><div class="area">📍 ${escapeHtml(p.area)}${dist}</div></div>
+              <div><h3>${escapeHtml(p.name)}</h3><div class="area">${escapeHtml(p.area)}${dist}</div></div>
               <div class="price"><strong>${euro(p.price)}</strong><small>/ hour · ${euro(p.daily)}/day</small></div>
             </div>
             <div class="occ" title="${occ}% occupied"><i style="width:${occ}%"></i></div>
@@ -281,7 +282,7 @@
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           state.userPos = [pos.coords.latitude, pos.coords.longitude];
-          L.circleMarker(state.userPos, { radius: 8, color: "#fff", weight: 3, fillColor: "#0d5eaf", fillOpacity: 1 })
+          L.circleMarker(state.userPos, { radius: 8, color: "#070b14", weight: 3, fillColor: "#f6b70b", fillOpacity: 1 })
             .addTo(map).bindPopup("You are here");
           render();
         },

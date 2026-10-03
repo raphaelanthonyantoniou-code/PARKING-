@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#070b14">
+  <title>SINA Marketplace</title>
+  <meta name="description" content="Find and book parking in Athens at garages running SINA Parking.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%23111827'/><path d='M50 22 80 76H20z' fill='%23f6b70b'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="marketplace.css">
+</head>
+<body>
+  <header class="nav">
+    <div class="container nav-inner">
+      <a href="index.html" class="brand"><span class="logo"><i></i></span><span class="brand-t"><b>S<em>I</em>NA</b> MARKETPLACE<small>Parking in Athens</small></span></a>
+      <nav class="nav-links" id="navLinks">
+        <a href="#find">Find parking</a>
+        <a href="#zones">Street parking</a>
+        <a href="#how">How it works</a>
+        <a href="#faq">FAQ</a>
+        <a href="index.html">For garages</a>
+        <a href="#" class="btn btn-ghost" id="openBookings">My bookings <span class="badge" id="bookingCount">0</span></a>
+      </nav>
+      <button class="menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container hero-inner">
+      <div class="hero-copy">
+        <span class="eyebrow"><i class="live"></i> Αθήνα · Live availability</span>
+        <h1>Park smarter in <span class="accent">Athens</span>.</h1>
+        <p>Live availability in garages from Syntagma to Piraeus. Reserve a spot in seconds, pay by the hour, and never circle the block again.</p>
+        <form class="search" id="heroSearch">
+          <input type="text" id="heroQuery" placeholder="Where to? e.g. Plaka, Kolonaki, Piraeus…" list="areaList" autocomplete="off">
+          <datalist id="areaList"></datalist>
+          <button class="btn btn-primary" type="submit">Find parking</button>
+        </form>
+        <div class="stats">
+          <div><strong id="statGarages">0</strong><span>locations</span></div>
+          <div><strong id="statFree">0</strong><span>free spots now</span></div>
+          <div><strong>€1.50</strong><span>from / hour</span></div>
+        </div>
+      </div>
+      <div class="hero-card" aria-hidden="true">
+        <div class="phone">
+          <div class="phone-top"></div>
+          <div class="phone-screen">
+            <div class="ps-head">Active session</div>
+            <div class="ps-place">Syntagma Square Garage</div>
+            <div class="ps-timer" id="demoTimer">01:24:07</div>
+            <div class="ps-row"><span>Plate</span><b>ΙΚΧ-4821</b></div>
+            <div class="ps-row"><span>Rate</span><b>€4.00 / h</b></div>
+            <div class="ps-bar"><i></i></div>
+            <div class="ps-btn">Extend +30 min</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="find" class="section">
+    <div class="container">
+      <div class="section-head">
+        <h2>Find parking</h2>
+        <p>Availability updates every few seconds. Tap a marker or a card to reserve.</p>
+      </div>
+      <div class="filters">
+        <input type="search" id="query" placeholder="Search by name or neighbourhood">
+        <div class="chips" id="chips">
+          <button class="chip" data-f="covered">Covered</button>
+          <button class="chip" data-f="24h">24/7</button>
+          <button class="chip" data-f="ev">EV charging</button>
+          <button class="chip" data-f="accessible">Accessible</button>
+          <button class="chip" data-f="valet">Valet</button>
+          <button class="chip" data-f="available">Has free spots</button>
+        </div>
+        <select id="sort">
+          <option value="price">Sort: cheapest</option>
+          <option value="free">Sort: most free spots</option>
+          <option value="name">Sort: A → Z</option>
+          <option value="distance">Sort: nearest to me</option>
+        </select>
+      </div>
+      <div class="finder">
+        <div id="map" class="map"></div>
+        <div class="list" id="list"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="zones" class="section alt">
+    <div class="container">
+      <div class="section-head">
+        <h2>Street parking in central Athens</h2>
+        <p>Not every trip ends in a garage. Here is what to know about parking on the street in the centre.</p>
+      </div>
+      <div class="cards3">
+        <div class="info-card">
+          <div class="dot blue"></div>
+          <h3>Controlled parking zones</h3>
+          <p>Many central neighbourhoods use a controlled-parking system with resident and visitor spaces. Check street signs for hours and maximum stay, then start a session in the app.</p>
+        </div>
+        <div class="info-card">
+          <div class="dot red"></div>
+          <h3>Daktylios (traffic ring)</h3>
+          <p>The central Athens ring restricts private cars on certain weekdays based on plate number. Park outside it at a park &amp; ride and take the metro in.</p>
+        </div>
+        <div class="info-card">
+          <div class="dot green"></div>
+          <h3>Park &amp; Ride</h3>
+          <p>Cheap all-day parking near metro stations like Marousi and Neos Kosmos. Leave the car, ride Line 1, 2 or 3 to the centre.</p>
+        </div>
+      </div>
+      <div class="calc">
+        <h3>Quick cost estimator</h3>
+        <div class="calc-row">
+          <label>Location
+            <select id="calcPlace"></select>
+          </label>
+          <label>Duration: <b id="calcHoursLabel">2 h</b>
+            <input type="range" id="calcHours" min="1" max="24" value="2">
+          </label>
+          <div class="calc-out"><span>Estimated</span><strong id="calcOut">€0.00</strong></div>
+        </div>
+        <small>Daily cap applies automatically — you never pay more than the location's day rate.</small>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" class="section">
+    <div class="container">
+      <div class="section-head"><h2>How it works</h2></div>
+      <div class="steps">
+        <div class="step"><span>1</span><h3>Search</h3><p>Pick a neighbourhood or use your location to see nearby garages with live free spots.</p></div>
+        <div class="step"><span>2</span><h3>Reserve</h3><p>Choose start time and duration and add your plate. The garage has your plate before you arrive.</p></div>
+        <div class="step"><span>3</span><h3>Park</h3><p>SINA garages read your plate at the gate, so the barrier opens for you.</p></div>
+        <div class="step"><span>4</span><h3>Manage</h3><p>See or cancel your bookings under My bookings. Receipts are issued by the garage through myDATA.</p></div>
+      </div>
+      <div class="app-cta">
+        <div>
+          <h3>Run a car park in Athens?</h3>
+          <p>Garages on SINA Parking Pro and Enterprise appear on this marketplace with live availability. Drivers book, your gate reads their plate, and the receipt goes to myDATA.</p>
+        </div>
+        <div class="stores">
+          <a class="store" href="index.html#pricing">See plans</a>
+          <a class="store alt" href="index.html#demo">Book a demo</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq" class="section alt">
+    <div class="container narrow">
+      <div class="section-head"><h2>FAQ</h2></div>
+      <details><summary>Can I cancel a reservation?</summary><p>Yes — free cancellation up to 30 minutes before your start time, directly from “My bookings”.</p></details>
+      <details><summary>What if I stay longer than booked?</summary><p>Overtime is billed at the hourly rate, rounded to 15 minutes, and capped at the daily rate.</p></details>
+      <details><summary>Do you support Greek plates and foreign plates?</summary><p>Both. Enter the plate exactly as shown; Greek letters (e.g. ΙΚΧ) and Latin letters are both accepted.</p></details>
+      <details><summary>Can my company book for its drivers?</summary><p>Yes. Business accounts get monthly invoicing with VAT number (ΑΦΜ), multiple drivers and spending limits.</p></details>
+      <details><summary>Is the airport covered?</summary><p>Yes, long-term parking at Athens International Airport can be booked for multiple days with the daily rate applied.</p></details>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div><a href="index.html" class="brand"><span class="logo"><i></i></span><span class="brand-t"><b>S<em>I</em>NA</b> MARKETPLACE<small>Parking in Athens</small></span></a><p>Live parking availability at SINA garages across Athens.</p></div>
+      <div><b>Areas</b><p>Syntagma · Plaka · Kolonaki · Piraeus · Glyfada · Kifisia</p></div>
+      <div><b>For garages</b><p><a href="index.html">SINA Parking</a><br><a href="index.html#pricing">Plans &amp; pricing</a><br>sales@sinaparking.example</p></div>
+    </div>
+    <div class="container copy">© <span id="year"></span> SINA Parking. Demo data — locations, prices and availability are illustrative.</div>
+  </footer>
+
+  <!-- Booking modal -->
+  <div class="modal" id="bookModal" hidden>
+    <div class="modal-box">
+      <button class="close" data-close>×</button>
+      <h3 id="bookTitle">Reserve</h3>
+      <p class="muted" id="bookArea"></p>
+      <form id="bookForm">
+        <div class="grid2">
+          <label>Date<input type="date" id="bDate" required></label>
+          <label>Start time<input type="time" id="bTime" required></label>
+        </div>
+        <label>Duration
+          <select id="bHours">
+            <option value="1">1 hour</option><option value="2" selected>2 hours</option>
+            <option value="3">3 hours</option><option value="4">4 hours</option>
+            <option value="6">6 hours</option><option value="8">8 hours</option>
+            <option value="12">12 hours</option><option value="24">1 day</option>
+            <option value="72">3 days</option><option value="168">1 week</option>
+          </select>
+        </label>
+        <label>License plate<input type="text" id="bPlate" placeholder="ΙΚΧ-1234" required maxlength="12"></label>
+        <label>Email for receipt<input type="email" id="bEmail" placeholder="you@example.com"></label>
+        <div class="total"><span>Total</span><strong id="bTotal">€0.00</strong></div>
+        <button class="btn btn-primary full" type="submit">Confirm reservation</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Bookings drawer -->
+  <div class="modal" id="bookingsModal" hidden>
+    <div class="modal-box">
+      <button class="close" data-close>×</button>
+      <h3>My bookings</h3>
+      <div id="bookingsList"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="data.js"></script>
+  <script src="marketplace.js"></script>
+</body>
+</html>
