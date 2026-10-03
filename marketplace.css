@@ -1,4 +1,4 @@
-/* SINA Marketplace — driver-facing parking finder. Same night-garage palette as the landing page. */
+/* Parkareto Marketplace — driver-facing parking finder. Same night-garage palette as the landing page. */
 :root {
   --bg: #070b14;
   --bg-alt: #0b1220;
@@ -48,8 +48,7 @@ h1, h2, h3 { line-height: 1.12; margin: 0 0 .5em; text-wrap: balance; }
 .nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 1000; background: rgba(7,11,20,.8); backdrop-filter: blur(16px) saturate(1.4); border-bottom: 1px solid var(--line); }
 .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 72px; }
 .brand { display: flex; align-items: center; gap: 12px; }
-.logo { width: 40px; height: 40px; border-radius: 11px; background: linear-gradient(160deg, #1b2438, #0d1322); border: 1px solid var(--line-2); display: grid; place-items: center; }
-.logo i { width: 0; height: 0; border-left: 9px solid transparent; border-right: 9px solid transparent; border-bottom: 16px solid var(--amber); filter: drop-shadow(0 0 8px rgba(246,183,11,.7)); }
+.logo-img { width: 40px; height: 40px; border-radius: 11px; filter: drop-shadow(0 6px 18px rgba(246,183,11,.35)); }
 .brand-t { font: 600 15px/1.05 var(--display); letter-spacing: .04em; color: var(--muted); }
 .brand-t b { color: var(--ink); font-weight: 800; }
 .brand-t em { font-style: normal; color: var(--amber); }
@@ -248,3 +247,8 @@ details p { color: var(--muted); margin: 10px 0 0; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* Pins drop in and re-bounce when their availability changes */
+.pin { animation: pinDrop .55s cubic-bezier(.2,.9,.3,1.3) both; }
+@keyframes pinDrop { from { transform: rotate(-45deg) translate(-26px, -26px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .pin { animation: none; } }

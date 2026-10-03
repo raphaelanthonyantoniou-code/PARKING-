@@ -3,16 +3,23 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>SINA Parking</title>
-  <meta name="description" content="SINA Parking is the smart parking system for Greek car parks: ANPR entry, live floor maps, tickets, subscribers, payments, CCTV and myDATA e-invoicing in one control room.">
+  <title>Parkareto</title>
+  <meta name="description" content="Parkareto is the smart parking system for Greek car parks: ANPR entry, live floor maps, tickets, subscribers, payments, CCTV and myDATA e-invoicing in one control room.">
   <meta name="theme-color" content="#070b14">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%23111827'/><path d='M50 22 80 76H20z' fill='%23f6b70b'/></svg>">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="landing.css">
+  <script>document.documentElement.classList.add("js")</script>
 </head>
 <body>
+  <div class="loader" id="loader" aria-hidden="true">
+    <svg viewBox="0 0 64 64"><path d="M21 49V15h13.5a11.5 11.5 0 0 1 0 23H28"/></svg>
+    <span>PARK<em>ARETO</em></span>
+  </div>
+  <div class="progress" id="progress" aria-hidden="true"></div>
+  <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
   <!-- Icon sprite -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
@@ -47,16 +54,17 @@
     </defs>
   </svg>
 
-  <div class="bg-fx" aria-hidden="true"><i class="orb o1"></i><i class="orb o2"></i><i class="orb o3"></i><i class="lanes"></i></div>
+  <div class="bg-fx" aria-hidden="true"><i class="orb o1"></i><i class="orb o2"></i><i class="orb o3"></i><i class="lanes"></i><i class="beam b1"></i><i class="beam b2"></i></div>
 
   <header class="nav" id="nav">
     <div class="wrap nav-in">
-      <a href="#top" class="logo" aria-label="SINA Parking home">
-        <span class="logo-mark"><i></i></span>
-        <span class="logo-text"><b>S<em>I</em>NA</b> PARKING<small>Smart Parking System</small></span>
+      <a href="#top" class="logo" aria-label="Parkareto home">
+        <img class="logo-img" src="assets/logo.svg" alt="" width="42" height="42">
+        <span class="logo-text"><b>PARK<em>ARETO</em></b><small>Smart Parking System</small></span>
       </a>
       <nav class="links" id="links">
         <a href="#features">Features</a>
+        <a href="#garage">Live 3D</a>
         <a href="#flow">How it works</a>
         <a href="#mydata">myDATA</a>
         <a href="#pricing">Pricing</a>
@@ -74,7 +82,7 @@
       <div class="wrap">
         <div class="hero-copy">
           <span class="pill"><i class="live-dot"></i> Smart Parking System · Built for Greece</span>
-          <h1>Your car park,<br><span class="glow">on autopilot.</span></h1>
+          <h1><span class="h-line">Your car park,</span><br><span class="rotator" id="rotator"><span class="rot-word glow">on autopilot.</span></span></h1>
           <p class="lead">Number-plate recognition at the gate, a live map of every bay, tickets, subscribers, payments, CCTV and automatic <b>myDATA / AADE</b> receipts. One fast, dark control room for the whole operation.</p>
           <div class="cta-row">
             <a href="#demo" class="btn btn-amber">Book a live demo <svg><use href="#i-arrow"/></svg></a>
@@ -93,7 +101,7 @@
           <div class="device" id="device">
             <div class="d-top">
               <span class="dots"><i></i><i></i><i></i></span>
-              <span class="d-brand"><span class="logo-mark xs"><i></i></span><b>S<em>I</em>NA</b> PARKING</span>
+              <span class="d-brand"><img class="logo-img xs" src="assets/logo.svg" alt="" width="22" height="22"><b>PARK<em>ARETO</em></b></span>
               <span class="d-search"><svg><use href="#i-search"/></svg> Search plate / ticket</span>
               <span class="d-user"><svg><use href="#i-bell"/></svg><i class="avatar"></i>Admin</span>
             </div>
@@ -159,7 +167,7 @@
         <div class="sec-copy">
           <span class="kicker">Gate automation</span>
           <h2>The barrier opens before the driver reaches for a ticket.</h2>
-          <p>SINA reads the plate, checks it against subscribers and reservations, issues a ticket and opens the barrier. When a plate can't be read, the operator types it at the manual gate. At the exit, a USB or Bluetooth scanner reads the ticket QR from any screen, with no field to click first.</p>
+          <p>Parkareto reads the plate, checks it against subscribers and reservations, issues a ticket and opens the barrier. When a plate can't be read, the operator types it at the manual gate. At the exit, a USB or Bluetooth scanner reads the ticket QR from any screen, with no field to click first.</p>
           <ul class="ticks">
             <li><svg><use href="#i-check"/></svg>Greek and foreign plates, Latin and Greek characters</li>
             <li><svg><use href="#i-check"/></svg>Subscribers and reservations recognised at the gate</li>
@@ -167,21 +175,155 @@
           </ul>
         </div>
         <div class="anpr">
-          <div class="cam">
-            <div class="cam-hud"><span><i class="rec-dot"></i>CAM-01 · ENTRY</span><span id="camTime">22:41:07</span></div>
-            <div class="car-front">
-              <div class="windshield"></div>
-              <div class="grille"></div>
-              <div class="lights"><i></i><i></i></div>
-              <div class="eu-plate" id="plateBox">
-                <span class="eu"><small>★</small>GR</span>
-                <b id="plateText">XHT-6666</b>
-                <i class="bbox"></i>
-              </div>
-            </div>
+          <div class="cam" id="cam">
+            <svg class="scene" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice" aria-label="Entry camera: a car stops at the barrier, its plate is read and the barrier opens">
+              <defs>
+                <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#121a2c"/><stop offset="1" stop-color="#070b14"/></linearGradient>
+                <linearGradient id="floorG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b111d"/><stop offset="1" stop-color="#1a2234"/></linearGradient>
+                <radialGradient id="pool" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffd86b" stop-opacity=".28"/><stop offset="1" stop-color="#ffd86b" stop-opacity="0"/></radialGradient>
+                <linearGradient id="bodyG" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" style="stop-color:var(--car-hi)"/><stop offset=".45" style="stop-color:var(--car)"/><stop offset="1" style="stop-color:var(--car-lo)"/>
+                </linearGradient>
+                <linearGradient id="hoodG" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" style="stop-color:var(--car-lo)"/><stop offset=".6" style="stop-color:var(--car-hi)"/><stop offset="1" style="stop-color:var(--car)"/>
+                </linearGradient>
+                <linearGradient id="glassG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b3a58"/><stop offset=".55" stop-color="#0d1424"/><stop offset="1" stop-color="#05080f"/></linearGradient>
+                <linearGradient id="ledG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9fd8ff"/><stop offset=".5" stop-color="#ffffff"/><stop offset="1" stop-color="#cfe9ff"/></linearGradient>
+                <radialGradient id="flare" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".25" stop-color="#e6f4ff" stop-opacity=".5"/><stop offset="1" stop-color="#bfe3ff" stop-opacity="0"/></radialGradient>
+                <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eaf6ff" stop-opacity=".22"/><stop offset="1" stop-color="#eaf6ff" stop-opacity="0"/></linearGradient>
+                <pattern id="honey" width="10" height="8" patternUnits="userSpaceOnUse"><path d="M0 4 5 0h0M5 8 10 4" stroke="#2a3346" stroke-width="1.6"/><rect width="10" height="8" fill="none"/></pattern>
+                <linearGradient id="stripes" x1="0" y1="0" x2="1" y2="0" gradientUnits="userSpaceOnUse" spreadMethod="repeat" gradientTransform="scale(.08 1)">
+                  <stop offset="0" stop-color="#ef4444"/><stop offset=".5" stop-color="#ef4444"/><stop offset=".5" stop-color="#f4f5f0"/><stop offset="1" stop-color="#f4f5f0"/>
+                </linearGradient>
+                <linearGradient id="fadeDown" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+                <mask id="reflMask"><rect x="-400" y="0" width="800" height="200" fill="url(#fadeDown)"/></mask>
+              </defs>
+
+              <!-- Garage interior -->
+              <rect width="800" height="500" fill="url(#wall)"/>
+              <g class="ceiling">
+                <rect x="120" y="40" width="120" height="8" rx="4" fill="#fff6d6"/><rect x="340" y="40" width="120" height="8" rx="4" fill="#fff6d6"/><rect x="560" y="40" width="120" height="8" rx="4" fill="#fff6d6"/>
+                <ellipse cx="180" cy="48" rx="140" ry="30" fill="url(#pool)"/><ellipse cx="400" cy="48" rx="140" ry="30" fill="url(#pool)"/><ellipse cx="620" cy="48" rx="140" ry="30" fill="url(#pool)"/>
+              </g>
+              <path d="M0 230 L800 230 L800 500 L0 500Z" fill="url(#floorG)"/>
+              <g stroke="#f4f5f0" stroke-opacity=".18" stroke-width="3" fill="none">
+                <path d="M330 230 L120 500"/><path d="M470 230 L680 500"/>
+              </g>
+              <path class="lane-dash" d="M400 232 L400 500" stroke="#f6b70b" stroke-opacity=".45" stroke-width="5" stroke-dasharray="16 22"/>
+              <text x="400" y="470" text-anchor="middle" class="floor-paint">ENTRY</text>
+              <!-- Pillars -->
+              <rect x="40" y="70" width="46" height="300" fill="#0c1220"/><rect x="40" y="250" width="46" height="120" fill="url(#stripes)" opacity=".18"/>
+              <rect x="714" y="70" width="46" height="300" fill="#0c1220"/>
+              <!-- Ticket terminal -->
+              <g transform="translate(590 250)">
+                <rect x="0" y="0" width="34" height="96" rx="6" fill="#1a2335" stroke="#2c3850"/>
+                <rect x="6" y="10" width="22" height="16" rx="2" fill="#0a0f1a"/><rect class="term-led" x="6" y="10" width="22" height="16" rx="2" fill="#22c55e" opacity=".0"/>
+                <rect x="10" y="36" width="14" height="3" rx="1.5" fill="#f6b70b"/>
+              </g>
+
+              <!-- Car -->
+              <g transform="translate(400 452)">
+                <g id="car" class="car-g">
+                  <ellipse cx="0" cy="2" rx="215" ry="16" fill="#000" opacity=".65"/>
+                  <!-- beams -->
+                  <path class="beams" d="M-140 -100 L-330 60 L-40 60 Z M140 -100 L330 60 L40 60 Z" fill="url(#beam)"/>
+                  <!-- tyres -->
+                  <rect x="-188" y="-44" width="52" height="46" rx="10" fill="#0a0c10"/><rect x="136" y="-44" width="52" height="46" rx="10" fill="#0a0c10"/>
+                  <!-- cabin / greenhouse -->
+                  <path d="M-138 -150 L-112 -222 Q-106 -236 -88 -238 L88 -238 Q106 -236 112 -222 L138 -150 Z" fill="url(#bodyG)"/>
+                  <path d="M-124 -154 L-101 -216 Q-97 -226 -84 -227 L84 -227 Q97 -226 101 -216 L124 -154 Z" fill="url(#glassG)"/>
+                  <path d="M-60 -226 L-20 -226 L-70 -156 L-108 -156 Z" fill="#fff" opacity=".07"/>
+                  <path d="M10 -226 L28 -226 L-6 -156 L-24 -156 Z" fill="#fff" opacity=".05"/>
+                  <rect x="-14" y="-224" width="28" height="12" rx="3" fill="#0a0f1a"/><circle cx="0" cy="-218" r="2.5" fill="#3b82f6"/>
+                  <!-- mirrors -->
+                  <path d="M-140 -160 L-170 -166 Q-178 -160 -172 -150 L-140 -148 Z" fill="url(#bodyG)"/>
+                  <path d="M140 -160 L170 -166 Q178 -160 172 -150 L140 -148 Z" fill="url(#bodyG)"/>
+                  <path d="M-170 -158 L-150 -156" stroke="#f6b70b" stroke-width="2.5" stroke-linecap="round"/><path d="M170 -158 L150 -156" stroke="#f6b70b" stroke-width="2.5" stroke-linecap="round"/>
+                  <!-- body -->
+                  <path d="M-196 -44 L-200 -104 Q-198 -130 -172 -140 L-130 -152 L130 -152 L172 -140 Q198 -130 200 -104 L196 -44 Q194 -28 176 -26 L-176 -26 Q-194 -28 -196 -44 Z" fill="url(#hoodG)"/>
+                  <path d="M-130 -152 L130 -152 L150 -140 L-150 -140 Z" fill="#fff" opacity=".12"/>
+                  <path d="M-186 -60 Q0 -48 186 -60" stroke="#000" stroke-opacity=".35" stroke-width="2" fill="none"/>
+                  <!-- headlights -->
+                  <path d="M-188 -118 L-104 -110 Q-98 -104 -104 -98 L-186 -102 Q-192 -110 -188 -118 Z" fill="#0b111c"/>
+                  <path class="drl" d="M-184 -114 L-108 -107" stroke="url(#ledG)" stroke-width="4" stroke-linecap="round"/>
+                  <path d="M188 -118 L104 -110 Q98 -104 104 -98 L186 -102 Q192 -110 188 -118 Z" fill="#0b111c"/>
+                  <path class="drl" d="M184 -114 L108 -107" stroke="url(#ledG)" stroke-width="4" stroke-linecap="round"/>
+                  <!-- grille -->
+                  <path d="M-92 -112 L92 -112 Q100 -112 98 -102 L90 -74 Q88 -68 80 -68 L-80 -68 Q-88 -68 -90 -74 L-98 -102 Q-100 -112 -92 -112 Z" fill="#0c1018"/>
+                  <path d="M-92 -112 L92 -112 Q100 -112 98 -102 L90 -74 Q88 -68 80 -68 L-80 -68 Q-88 -68 -90 -74 L-98 -102 Q-100 -112 -92 -112 Z" fill="url(#honey)"/>
+                  <path d="M-92 -112 L92 -112" stroke="#c7cfdc" stroke-opacity=".5" stroke-width="2"/>
+                  <image href="assets/logo.svg" x="-11" y="-101" width="22" height="22"/>
+                  <!-- lower bumper -->
+                  <path d="M-160 -60 L-96 -58 L-102 -36 L-164 -38 Z" fill="#0c1018"/><path d="M160 -60 L96 -58 L102 -36 L164 -38 Z" fill="#0c1018"/>
+                  <circle cx="-140" cy="-48" r="5" fill="#fff4cf" opacity=".85"/><circle cx="140" cy="-48" r="5" fill="#fff4cf" opacity=".85"/>
+                  <!-- number plate -->
+                  <g id="plateG">
+                    <rect x="-68" y="-62" width="136" height="30" rx="4" fill="#f4f5f0" stroke="#11151d" stroke-width="2.5"/>
+                    <rect x="-66.5" y="-60.5" width="18" height="27" rx="2.5" fill="#1a3fa8"/>
+                    <text x="-57.5" y="-37" text-anchor="middle" class="plate-gr">GR</text>
+                    <circle cx="-57.5" cy="-52" r="4" fill="none" stroke="#ffd400" stroke-width="1.4" stroke-dasharray="1.2 1.4"/>
+                    <text id="plateText" x="10" y="-39" text-anchor="middle" class="plate-num">XHT-6666</text>
+                  </g>
+                  <g class="bbox">
+                    <rect x="-78" y="-72" width="156" height="50" rx="6" fill="none" stroke="#22c55e" stroke-width="3"/>
+                    <rect x="-78" y="-96" width="156" height="22" rx="4" fill="#22c55e"/>
+                    <text id="bboxText" x="0" y="-80" text-anchor="middle" class="bbox-t">XHT-6666 · 99.2%</text>
+                  </g>
+                  <!-- flares -->
+                  <ellipse class="flare" cx="-146" cy="-110" rx="70" ry="26" fill="url(#flare)"/>
+                  <ellipse class="flare" cx="146" cy="-110" rx="70" ry="26" fill="url(#flare)"/>
+                </g>
+              </g>
+
+              <!-- Barrier -->
+              <g class="barrier">
+                <rect x="650" y="270" width="40" height="120" rx="6" fill="#f6b70b"/>
+                <rect x="650" y="300" width="40" height="10" fill="#1a1203" opacity=".5"/>
+                <circle class="b-led" cx="670" cy="285" r="6" fill="#ef4444"/>
+                <g class="arm"><rect x="90" y="282" width="574" height="14" rx="7" fill="url(#stripes)"/><circle cx="96" cy="289" r="4" fill="#ef4444" class="arm-tip"/></g>
+              </g>
+            </svg>
+            <div class="cam-hud"><span><i class="rec-dot"></i>CAM-01 · ENTRY · LANE 1</span><span id="camTime">22:41:07</span></div>
+            <div class="reticle" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+            <div class="cam-status" id="camStatus">SCANNING</div>
             <i class="laser"></i>
           </div>
           <div class="console" id="console" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3D GARAGE -->
+    <section class="sec" id="garage">
+      <div class="wrap garage">
+        <div class="sec-copy">
+          <span class="kicker">Live Parking</span>
+          <h2>Every bay, every floor, as it happens.</h2>
+          <p>Parkareto keeps a live model of your garage. Cars appear in their bays as they park and leave as they exit. Reserved, disabled and EV bays keep their colour so the team can see them at a glance.</p>
+          <div class="floors" role="tablist" aria-label="Floor">
+            <button role="tab" aria-selected="false" data-floor="-1">Όροφος −1</button>
+            <button role="tab" aria-selected="true" class="on" data-floor="0">Ισόγειο</button>
+            <button role="tab" aria-selected="false" data-floor="1">Όροφος 1</button>
+          </div>
+          <div class="g-stats">
+            <div><b id="gFree">0</b><span><i class="g"></i>Available</span></div>
+            <div><b id="gOcc">0</b><span><i class="o"></i>Occupied</span></div>
+            <div><b id="gRes">0</b><span><i class="r"></i>Reserved</span></div>
+            <div><b id="gEv">0</b><span><i class="e"></i>Charging</span></div>
+          </div>
+          <ul class="g-feed" id="gFeed" aria-live="polite"></ul>
+        </div>
+        <div class="g3d" id="g3d" aria-label="3D view of a garage floor with cars entering and leaving bays">
+          <div class="g-scale" id="gScale">
+            <div class="floor3d" id="floor3d">
+              <div class="paint lane-line"></div>
+              <span class="paint word w-in">ENTRY →</span>
+              <span class="paint word w-out">EXIT →</span>
+              <span class="paint zone">A</span>
+              <span class="paint arrow a1">➜</span><span class="paint arrow a2">➜</span>
+            </div>
+          </div>
+          <div class="g-hint">Move your pointer to rotate</div>
         </div>
       </div>
     </section>
@@ -292,7 +434,7 @@
       <div class="wrap split rev">
         <div class="receipt-wrap">
           <div class="receipt">
-            <div class="r-head"><span class="logo-mark xs"><i></i></span><b>SINA PARKING</b><small>ΑΠΟΔΕΙΞΗ ΠΑΡΟΧΗΣ ΥΠΗΡΕΣΙΩΝ</small></div>
+            <div class="r-head"><img class="logo-img xs" src="assets/logo.svg" alt="" width="22" height="22"><b>PARKARETO</b><small>ΑΠΟΔΕΙΞΗ ΠΑΡΟΧΗΣ ΥΠΗΡΕΣΙΩΝ</small></div>
             <div class="r-row"><span>Ticket</span><b>#TK-00418</b></div>
             <div class="r-row"><span>Plate</span><b>XHT-6666</b></div>
             <div class="r-row"><span>Entry</span><b>20:55</b></div>
@@ -310,7 +452,7 @@
         <div class="sec-copy">
           <span class="kicker">myDATA / AADE</span>
           <h2>Receipts that file themselves.</h2>
-          <p>Every paid ticket becomes a receipt that is sent to AADE's myDATA platform and comes back with its ΜΑΡΚ. Subscriptions and company invoices with ΑΦΜ go through the same path. Your accountant opens SINA and finds the month ready.</p>
+          <p>Every paid ticket becomes a receipt that is sent to AADE's myDATA platform and comes back with its ΜΑΡΚ. Subscriptions and company invoices with ΑΦΜ go through the same path. Your accountant opens Parkareto and finds the month ready.</p>
           <ul class="ticks">
             <li><svg><use href="#i-check"/></svg>Receipts and invoices with VAT (ΦΠΑ) broken out</li>
             <li><svg><use href="#i-check"/></svg>Company details looked up from the ΑΦΜ</li>
@@ -369,7 +511,7 @@
               <li><svg><use href="#i-check"/></svg>Reservations &amp; Subscribers</li>
               <li><svg><use href="#i-check"/></svg>CCTV Monitor &amp; Activity log</li>
               <li><svg><use href="#i-check"/></svg>Accounting reports</li>
-              <li><svg><use href="#i-check"/></svg>Listing on the SINA Marketplace</li>
+              <li><svg><use href="#i-check"/></svg>Listing on the Parkareto Marketplace</li>
               <li><svg><use href="#i-check"/></svg>10 user accounts with roles</li>
             </ul>
           </article>
@@ -430,12 +572,12 @@
     <section class="sec" id="market">
       <div class="wrap market">
         <div class="sec-copy">
-          <span class="kicker">SINA Marketplace</span>
+          <span class="kicker">Parkareto Marketplace</span>
           <h2>Fill empty bays with drivers who are already looking.</h2>
-          <p>Pro and Enterprise garages can list their spaces on the SINA Marketplace. Drivers in Athens see live availability, book a bay and drive in. The plate is already in your system when they arrive.</p>
+          <p>Pro and Enterprise garages can list their spaces on the Parkareto Marketplace. Drivers in Athens see live availability, book a bay and drive in. The plate is already in your system when they arrive.</p>
           <a href="marketplace.html" class="btn btn-amber">Open the marketplace <svg><use href="#i-arrow"/></svg></a>
         </div>
-        <a class="market-card" href="marketplace.html" aria-label="Open the SINA Marketplace">
+        <a class="market-card" href="marketplace.html" aria-label="Open the Parkareto Marketplace">
           <div class="mc-map">
             <i class="mc-pin g" style="left:38%;top:42%">P</i>
             <i class="mc-pin o" style="left:52%;top:30%">P</i>
@@ -455,9 +597,9 @@
     <section class="sec" id="faq">
       <div class="wrap narrow">
         <div class="sec-head center"><span class="kicker">Questions</span><h2>Before you ask.</h2></div>
-        <details><summary>Which cameras and barriers does SINA work with?</summary><p>SINA connects to ANPR cameras and barrier controllers at your entry and exit lanes. Tell us what is installed today and we'll confirm compatibility before you sign up. We can also supply and install hardware.</p></details>
+        <details><summary>Which cameras and barriers does Parkareto work with?</summary><p>Parkareto connects to ANPR cameras and barrier controllers at your entry and exit lanes. Tell us what is installed today and we'll confirm compatibility before you sign up. We can also supply and install hardware.</p></details>
         <details><summary>What happens if a plate can't be read?</summary><p>The gate operator types the plate at the manual gate and chooses Entry or Exit. The override is recorded in the Activity log with the user's name.</p></details>
-        <details><summary>How does the exit work without a cashier?</summary><p>The driver scans the ticket QR or barcode at the exit. A USB or Bluetooth scanner works from any screen in SINA, so nobody needs to click into a field first.</p></details>
+        <details><summary>How does the exit work without a cashier?</summary><p>The driver scans the ticket QR or barcode at the exit. A USB or Bluetooth scanner works from any screen in Parkareto, so nobody needs to click into a field first.</p></details>
         <details><summary>Is myDATA transmission included?</summary><p>Yes, on every plan. Receipts are sent to AADE's myDATA and the ΜΑΡΚ is stored with the ticket. You need your own AADE credentials, which we help you set up.</p></details>
         <details><summary>Can I design several floors?</summary><p>Yes. The Floor Designer supports multiple floors (Όροφος 1, 2, −1 …) and zones, with bay types for available, reserved and disabled spaces.</p></details>
         <details><summary>Can I move my data or keep a backup?</summary><p>You can export a full backup at any time and restore it on another machine.</p></details>
@@ -471,7 +613,7 @@
         <div class="demo">
           <div class="sec-copy">
             <span class="kicker">Book a demo</span>
-            <h2>See SINA running on your own floor plan.</h2>
+            <h2>See Parkareto running on your own floor plan.</h2>
             <p>Send us your site details. We'll build your floors in the designer and walk you through a full entry-to-myDATA visit in 30 minutes.</p>
             <ul class="ticks">
               <li><svg><use href="#i-check"/></svg>Live online or at your site in Attica</li>
@@ -503,13 +645,13 @@
   <footer class="foot">
     <div class="wrap foot-in">
       <div>
-        <a href="#top" class="logo"><span class="logo-mark"><i></i></span><span class="logo-text"><b>S<em>I</em>NA</b> PARKING<small>Smart Parking System</small></span></a>
+        <a href="#top" class="logo"><img class="logo-img" src="assets/logo.svg" alt="" width="42" height="42"><span class="logo-text"><b>PARK<em>ARETO</em></b><small>Smart Parking System</small></span></a>
         <p>Parking management software for garages and car parks in Greece.</p>
       </div>
       <div><b>Product</b><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="#mydata">myDATA / AADE</a><a href="marketplace.html">Marketplace</a></div>
-      <div><b>Company</b><a href="#demo">Book a demo</a><a href="#faq">FAQ</a><span>sales@sinaparking.example</span><span>Athens, Greece</span></div>
+      <div><b>Company</b><a href="#demo">Book a demo</a><a href="#faq">FAQ</a><span>sales@parkareto.example</span><span>Athens, Greece</span></div>
     </div>
-    <div class="wrap copy">© <span id="year"></span> SINA Parking. Screens and figures on this page are illustrative.</div>
+    <div class="wrap copy">© <span id="year"></span> Parkareto. Screens and figures on this page are illustrative.</div>
   </footer>
 
   <script src="landing.js"></script>

@@ -3,7 +3,7 @@
 
   const parkings = window.PARKINGS;
   const ATHENS = [37.9838, 23.7275];
-  const STORE_KEY = "sina.marketplace.bookings";
+  const STORE_KEY = "parkareto.marketplace.bookings";
   const FEATURE_LABELS = { covered: "Covered", "24h": "24/7", ev: "EV", accessible: "Accessible", valet: "Valet" };
 
   const $ = (sel) => document.querySelector(sel);

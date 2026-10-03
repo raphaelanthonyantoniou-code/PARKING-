@@ -13,7 +13,47 @@
 
   // Letters shared by the Greek and Latin alphabets, as used on Greek plates.
   const L = "ABEZHIKMNOPTXY";
+  const CAR_TINTS = ["#e8ecf3", "#c9d2e3", "#1f2a40", "#b91c1c", "#2563eb", "#f2c200", "#6b7280", "#0f172a"];
   const plate = () => Array.from({ length: 3 }, () => pick(L)).join("") + "-" + (1000 + Math.floor(Math.random() * 9000));
+
+  // ---------- Intro loader ----------
+  const loader = $("#loader");
+  const hideLoader = () => loader && loader.classList.add("done");
+  if (reduce) hideLoader();
+  else {
+    window.addEventListener("load", () => setTimeout(hideLoader, 700));
+    setTimeout(hideLoader, 2600);
+  }
+
+  // ---------- Scroll progress + cursor glow ----------
+  const progress = $("#progress");
+  const onProgress = () => {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    progress.style.setProperty("--p", max > 0 ? (window.scrollY / max).toFixed(4) : 0);
+  };
+  window.addEventListener("scroll", onProgress, { passive: true });
+  onProgress();
+  const glowEl = $("#cursorGlow");
+  window.addEventListener("pointermove", (e) => {
+    glowEl.style.setProperty("--cx", e.clientX + "px");
+    glowEl.style.setProperty("--cy", e.clientY + "px");
+  }, { passive: true });
+
+  // ---------- Rotating headline ----------
+  const WORDS = ["on autopilot.", "in real time.", "paper-free.", "myDATA-ready."];
+  const rot = $("#rotator");
+  let wi = 0;
+  if (!reduce) setInterval(() => {
+    const cur = $(".rot-word", rot);
+    cur.classList.add("out");
+    setTimeout(() => {
+      wi = (wi + 1) % WORDS.length;
+      cur.textContent = WORDS[wi];
+      cur.classList.remove("out");
+      cur.classList.add("in");
+      setTimeout(() => cur.classList.remove("in"), 650);
+    }, 430);
+  }, 3200);
 
   // ---------- Nav ----------
   const nav = $("#nav");
@@ -51,6 +91,7 @@
       if (r === 0 && c < 2) s = "b";
       if (r === ROWS - 1 && c > 9) s = "r";
       el.className = "bay " + s;
+      el.style.setProperty("--cc", pick(CAR_TINTS));
       el.dataset.s = s;
       lot.appendChild(el);
       bays.push(el);
@@ -112,6 +153,7 @@
       typePlate(p, () => {
         const bay = pick(free);
         bay.dataset.s = "o";
+        bay.style.setProperty("--cc", pick(CAR_TINTS));
         bay.className = "bay o pulse";
         setTimeout(() => bay.classList.remove("pulse"), 1400);
         inside.push(p);
@@ -143,37 +185,221 @@
     $("#mockClock").textContent = `${pad(Math.floor(secs / 3600))}:${pad(Math.floor((secs % 3600) / 60))}:${pad(secs % 60)}`;
   }, 1000);
 
-  // ---------- ANPR scanner ----------
-  const cam = $(".cam"), consoleEl = $("#console"), bbox = $(".bbox");
-  let ticket = 418;
+  // ---------- ANPR camera scene ----------
+  const cam = $("#cam"), consoleEl = $("#console"), carG = $("#car"), camStatus = $("#camStatus");
+  const CAR_PAINTS = [
+    ["#1d2b4a", "#4a6292", "#0b1222"], // midnight blue
+    ["#b91c1c", "#ef6b6b", "#4a0909"], // red
+    ["#e5e9f0", "#ffffff", "#8b95a7"], // white
+    ["#f2c200", "#ffe46b", "#7a5f00"], // Athens taxi yellow
+    ["#2b2f36", "#5b6270", "#0c0e12"], // graphite
+    ["#8a96a8", "#d3dae6", "#3b4352"], // silver
+  ];
+  let ticket = 418, paint = 0;
   const log = (html) => {
     const d = document.createElement("div");
     d.innerHTML = `<span class="t">${nowS()}</span> ${html}`;
     consoleEl.appendChild(d);
-    while (consoleEl.children.length > 7) consoleEl.firstChild.remove();
+    while (consoleEl.children.length > 6) consoleEl.firstChild.remove();
   };
+  const status = (txt, ok) => { camStatus.textContent = txt; camStatus.classList.toggle("ok", !!ok); };
+  const later = (ms, fn) => setTimeout(fn, reduce ? 0 : ms);
   function anprCycle() {
     const p = plate();
     const conf = (97 + Math.random() * 2.9).toFixed(1);
     const sub = Math.random() < 0.3;
+    const [c, hi, lo] = CAR_PAINTS[paint++ % CAR_PAINTS.length];
+    cam.style.setProperty("--car", c); cam.style.setProperty("--car-hi", hi); cam.style.setProperty("--car-lo", lo);
     $("#plateText").textContent = p;
-    cam.classList.remove("locked");
+    cam.classList.remove("locked", "open");
+    carG.classList.remove("leave");
+    void carG.getBoundingClientRect();
+    carG.classList.add("arrive");
+    cam.classList.add("scanning");
+    status("VEHICLE APPROACHING");
     log(`<span class="w">CAM-01</span> vehicle detected · lane 1`);
-    setTimeout(() => {
-      bbox.dataset.l = `${p} · ${conf}%`;
+    later(1700, () => {
+      $("#bboxText").textContent = `${p} · ${conf}%`;
       cam.classList.add("locked");
+      cam.classList.remove("scanning");
+      status("PLATE READ " + p, true);
       log(`<span class="am">ANPR</span> read <span class="w">${p}</span> · confidence ${conf}%`);
-    }, 1100);
-    setTimeout(() => {
+    });
+    later(2500, () => {
       if (sub) log(`<span class="ok">MATCH</span> subscriber · monthly pass valid`);
       else log(`<span class="ok">TICKET</span> #TK-${String(++ticket).padStart(5, "0")} issued`);
-    }, 2000);
-    setTimeout(() => log(`<span class="ok">GATE</span> barrier OPEN · bay map updated`), 2700);
+    });
+    later(3100, () => { cam.classList.add("open"); status("BARRIER OPEN", true); log(`<span class="ok">GATE</span> barrier OPEN · bay map updated`); });
+    later(4400, () => { cam.classList.remove("locked"); carG.classList.remove("arrive"); carG.classList.add("leave"); });
+    later(5700, () => { cam.classList.remove("open"); status("SCANNING"); });
+    later(6400, () => { carG.classList.remove("leave"); });
   }
   $("#camTime").textContent = nowS();
   setInterval(() => ($("#camTime").textContent = nowS()), 1000);
   anprCycle();
-  if (!reduce) setInterval(anprCycle, 6000);
+  if (!reduce) setInterval(anprCycle, 7200);
+
+  // ---------- 3D garage ----------
+  const g3d = $("#g3d"), floor = $("#floor3d"), gScale = $("#gScale");
+  const BAY_W = 60, BAY_H = 118, X0 = 40, TOP_Y = 18, BOT_Y = 284, LANE_IN = 178, LANE_OUT = 240;
+  const G_PAINTS = [["#e5e9f0", "#9aa6ba", "#8b95a7"], ["#b91c1c", "#2a0c0c", "#5c0f0f"], ["#1d2b4a", "#0e1628", "#0b1222"], ["#f2c200", "#3a2f05", "#7a5f00"], ["#2b2f36", "#14171c", "#0c0e12"], ["#8a96a8", "#2b3240", "#3b4352"], ["#2563eb", "#0d1b3d", "#13306f"]];
+  const gBays = [];
+  floor.insertAdjacentHTML("beforeend", '<i class="slab-b"></i><i class="slab-r"></i>');
+  ["top", "bot"].forEach((row) => {
+    for (let i = 0; i < 10; i++) {
+      const el = document.createElement("div");
+      el.className = "bay3d " + row;
+      el.style.left = X0 + i * BAY_W + "px";
+      el.style.top = (row === "top" ? TOP_Y : BOT_Y) + "px";
+      el.innerHTML = '<i class="beacon"></i>';
+      floor.appendChild(el);
+      gBays.push({ el, row, i, x: X0 + i * BAY_W + BAY_W / 2, y: (row === "top" ? TOP_Y : BOT_Y) + BAY_H / 2, type: "std", car: null, busy: false });
+    }
+  });
+  [[X0 + 5 * BAY_W - 9, TOP_Y + BAY_H + 2], [X0 + 5 * BAY_W - 9, BOT_Y - 20]].forEach(([x, y]) => {
+    const p = document.createElement("div");
+    p.className = "pillar";
+    p.style.left = x + "px"; p.style.top = y + "px";
+    p.innerHTML = '<i class="p1"></i><i class="p2"></i><i class="p3"></i><i class="p4"></i><i class="pt"></i>';
+    floor.appendChild(p);
+  });
+
+  function carPose(x, y, rot) { return `translate(${x - 21}px, ${y - 42}px) rotate(${rot}deg)`; }
+  function makeCar() {
+    const c = document.createElement("div");
+    const [col, hi, lo] = pick(G_PAINTS);
+    c.className = "car3d";
+    c.style.setProperty("--c", col); c.style.setProperty("--c-hi", hi); c.style.setProperty("--c-lo", lo);
+    c.innerHTML = '<i class="cs"></i><i class="cl"></i><i class="cr"></i><i class="cf"></i><i class="cb"></i><i class="ct"></i>';
+    floor.appendChild(c);
+    return c;
+  }
+  function parkAt(b) {
+    b.car = makeCar();
+    b.car.style.transform = carPose(b.x, b.y, b.row === "top" ? 0 : 180);
+    b.el.classList.add("taken");
+  }
+  const counts = () => ({
+    free: gBays.filter((b) => !b.car && b.type !== "res" && b.type !== "dis").length,
+    occ: gBays.filter((b) => b.car).length,
+    res: gBays.filter((b) => b.type === "res").length,
+    ev: gBays.filter((b) => b.type === "ev" && b.car).length,
+  });
+  function renderCounts() {
+    const c = counts();
+    [["gFree", c.free], ["gOcc", c.occ], ["gRes", c.res], ["gEv", c.ev]].forEach(([id, v]) => {
+      const el = $("#" + id);
+      if (el.textContent !== String(v)) { el.textContent = v; el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump"); }
+    });
+  }
+  const feed = $("#gFeed");
+  function feedLine(html) {
+    const li = document.createElement("li");
+    li.innerHTML = `${now()} ${html}`;
+    feed.prepend(li);
+    while (feed.children.length > 4) feed.lastChild.remove();
+  }
+  const bayName = (b) => (b.row === "top" ? "A" : "B") + String(b.i + 1).padStart(2, "0");
+
+  let floorNo = 0;
+  function layoutFloor(n) {
+    gBays.forEach((b) => {
+      if (b.car) { b.car.remove(); b.car = null; }
+      b.busy = false;
+      b.el.classList.remove("taken", "res", "dis", "ev");
+      b.type = "std";
+    });
+    const seed = (n + 2) * 7;
+    gBays.forEach((b, k) => {
+      if (b.row === "top" && b.i < 2) b.type = "dis";
+      else if (b.row === "bot" && b.i > 7) b.type = "ev";
+      else if ((k * 13 + seed) % 11 === 0) b.type = "res";
+      if (b.type !== "std") b.el.classList.add(b.type);
+      if (b.type !== "dis" && Math.random() < (n === 1 ? 0.35 : 0.6)) parkAt(b);
+    });
+    renderCounts();
+  }
+
+  function driveIn() {
+    const free = gBays.filter((b) => !b.car && !b.busy && b.type !== "dis");
+    if (!free.length) return false;
+    const b = pick(free);
+    const p = plate();
+    b.busy = true;
+    const car = makeCar();
+    const top = b.row === "top";
+    const laneY = top ? LANE_IN : LANE_OUT - 12;
+    const frames = [
+      { transform: carPose(-60, LANE_IN, 90), offset: 0 },
+      { transform: carPose(b.x - 34, laneY, 90), offset: 0.55 },
+      { transform: carPose(b.x, laneY + (top ? -26 : 26), top ? 0 : 180), offset: 0.75 },
+      { transform: carPose(b.x, b.y, top ? 0 : 180), offset: 1 },
+    ];
+    const anim = car.animate(frames, { duration: reduce ? 1 : 3600, easing: "cubic-bezier(.45,.05,.35,1)", fill: "forwards" });
+    anim.onfinish = () => {
+      car.style.transform = carPose(b.x, b.y, top ? 0 : 180);
+      anim.cancel();
+      b.car = car; b.busy = false;
+      b.el.classList.add("taken");
+      renderCounts();
+    };
+    feedLine(`<span class="in">IN </span> <b>${p}</b> → bay ${bayName(b)}${b.type === "ev" ? " · charging" : b.type === "res" ? " · reservation" : ""}`);
+    return true;
+  }
+  function driveOut() {
+    const taken = gBays.filter((b) => b.car && !b.busy);
+    if (!taken.length) return false;
+    const b = pick(taken);
+    const car = b.car;
+    const top = b.row === "top";
+    b.busy = true; b.car = null;
+    b.el.classList.remove("taken");
+    renderCounts();
+    const rot = top ? 0 : 180;
+    const frames = [
+      { transform: carPose(b.x, b.y, rot), offset: 0 },
+      { transform: carPose(b.x, top ? LANE_IN + 10 : LANE_OUT - 10, rot), offset: 0.35 },
+      { transform: carPose(b.x + 40, LANE_OUT - 8, 90), offset: 0.55 },
+      { transform: carPose(760, LANE_OUT - 8, 90), offset: 1 },
+    ];
+    const anim = car.animate(frames, { duration: reduce ? 1 : 3400, easing: "cubic-bezier(.45,.05,.35,1)", fill: "forwards" });
+    anim.onfinish = () => { car.remove(); b.busy = false; };
+    feedLine(`<span class="out">OUT</span> <b>${plate()}</b> ← bay ${bayName(b)} · ${euro(pick([2, 3, 4.5, 6, 8]))}`);
+    return true;
+  }
+  layoutFloor(floorNo);
+  feedLine(`<span class="in">IN </span> <b>XHT-6666</b> → bay A07`);
+  if (!reduce) setInterval(() => {
+    if (document.hidden) return;
+    const occ = counts().occ;
+    if (occ < 6 || (occ < 16 && Math.random() < 0.55)) driveIn() || driveOut();
+    else driveOut() || driveIn();
+  }, 2300);
+
+  $$(".floors button").forEach((btn) => btn.addEventListener("click", () => {
+    if (btn.classList.contains("on")) return;
+    $$(".floors button").forEach((x) => { x.classList.toggle("on", x === btn); x.setAttribute("aria-selected", x === btn); });
+    floorNo = Number(btn.dataset.floor);
+    floor.classList.remove("flip"); void floor.offsetWidth; floor.classList.add("flip");
+    later(360, () => layoutFloor(floorNo));
+    feedLine(`<b>${btn.textContent}</b> selected`);
+  }));
+
+  function fitGarage() {
+    const w = g3d.clientWidth;
+    gScale.style.setProperty("--gs", Math.min(1, (w - 10) / 900).toFixed(3));
+  }
+  fitGarage();
+  window.addEventListener("resize", fitGarage);
+  if (!reduce && window.matchMedia("(hover: hover)").matches) {
+    g3d.addEventListener("pointermove", (e) => {
+      const r = g3d.getBoundingClientRect();
+      const dx = (e.clientX - r.left) / r.width - 0.5, dy = (e.clientY - r.top) / r.height - 0.5;
+      floor.style.setProperty("--rz", (-32 + dx * 24).toFixed(1) + "deg");
+      floor.style.setProperty("--rx", (58 - dy * 14).toFixed(1) + "deg");
+    });
+    g3d.addEventListener("pointerleave", () => { floor.style.removeProperty("--rz"); floor.style.removeProperty("--rx"); });
+  }
 
   // ---------- Floor designer ----------
   const designer = $("#designer");
@@ -214,13 +440,28 @@
   });
 
   // ---------- Tile spotlight ----------
-  $$(".tile").forEach((t) =>
+  const canHover = window.matchMedia("(hover: hover)").matches && !reduce;
+  $$(".tile").forEach((t) => {
     t.addEventListener("pointermove", (e) => {
       const r = t.getBoundingClientRect();
-      t.style.setProperty("--mx", e.clientX - r.left + "px");
-      t.style.setProperty("--my", e.clientY - r.top + "px");
-    })
-  );
+      const x = e.clientX - r.left, y = e.clientY - r.top;
+      t.style.setProperty("--mx", x + "px");
+      t.style.setProperty("--my", y + "px");
+      if (!canHover) return;
+      t.classList.add("tilting");
+      t.style.transform = `perspective(900px) rotateX(${((y / r.height) - 0.5) * -7}deg) rotateY(${((x / r.width) - 0.5) * 7}deg) translateY(-4px)`;
+    });
+    t.addEventListener("pointerleave", () => { t.classList.remove("tilting"); t.style.transform = ""; });
+  });
+
+  // ---------- Magnetic buttons ----------
+  if (canHover) $$(".btn-amber, .btn-glass").forEach((b) => {
+    b.addEventListener("pointermove", (e) => {
+      const r = b.getBoundingClientRect();
+      b.style.transform = `translate(${(e.clientX - r.left - r.width / 2) * 0.18}px, ${(e.clientY - r.top - r.height / 2) * 0.25 - 2}px)`;
+    });
+    b.addEventListener("pointerleave", () => (b.style.transform = ""));
+  });
 
   // ---------- Reveal + counters ----------
   const revealTargets = $$(".sec-head, .sec-copy, .tile, .flow li, .plan, .nums div, .anpr, .receipt-wrap, .est-out, .market-card, .demo");
@@ -295,7 +536,7 @@
     }
     const d = Object.fromEntries(new FormData(form));
     const body = `Name: ${d.name}\nCompany: ${d.company}\nEmail: ${d.email}\nPhone: ${d.phone}\nBays: ${d.bays}\nPlan: ${d.plan}\n\n${d.message}`;
-    window.location.href = `mailto:sales@sinaparking.example?subject=${encodeURIComponent("SINA Parking demo request")}&body=${encodeURIComponent(body)}`;
+    window.location.href = `mailto:sales@parkareto.example?subject=${encodeURIComponent("Parkareto demo request")}&body=${encodeURIComponent(body)}`;
     msg.className = "form-msg ok";
     msg.textContent = `Thanks, ${d.name.split(" ")[0]}. Your email app is opening with the request filled in. Send it and we'll get back to you.`;
   });
