@@ -1,0 +1,33 @@
+/* Server-rendered car park pages (/parking, /parking/:slug). Builds on marketplace.css. */
+.gp-hero { position: relative; padding: 56px 0 64px; overflow: hidden;
+  background: radial-gradient(700px 380px at 85% 0%, rgba(246,183,11,.16), transparent 65%), radial-gradient(600px 400px at 0% 100%, rgba(59,130,246,.14), transparent 60%), var(--bg); }
+.gp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+.crumbs { font-size: 13.5px; color: var(--muted); margin-bottom: 18px; }
+.crumbs a { color: var(--amber-2); }
+.gp-hero h1 { font: 800 clamp(32px, 5vw, 56px)/1.05 var(--display); letter-spacing: -.03em; }
+.gp-area { color: var(--muted); font-size: 18px; margin: 0 0 22px; max-width: 60ch; }
+.gp-live { padding: 16px 18px; border-radius: 14px; border: 1px solid var(--line-2); background: var(--surface); max-width: 420px; }
+.gp-live .avail { font-size: 18px; }
+.gp-live small { color: var(--dim); display: block; margin-top: 8px; }
+.gp-live.flash { animation: gpFlash .8s; }
+@keyframes gpFlash { 30% { border-color: var(--amber); box-shadow: 0 0 0 4px rgba(246,183,11,.15); } }
+.gp-price { display: flex; gap: 28px; margin: 22px 0; }
+.gp-price strong { display: block; font: 800 30px var(--display); color: var(--amber); }
+.gp-price span { color: var(--muted); font-size: 14px; }
+.gp-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+.gp-feat { list-style: none; padding: 0; margin: 22px 0 0; display: flex; gap: 8px; flex-wrap: wrap; }
+.gp-feat li { font-size: 13.5px; padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line-2); color: var(--muted); }
+.gp-map { height: 420px; border-radius: 18px; border: 1px solid var(--line-2); background: var(--bg-alt); box-shadow: var(--shadow); }
+.gp-cols { display: grid; grid-template-columns: 1.4fr .8fr; gap: 48px; }
+.gp-cols h2 { font: 700 24px var(--display); margin: 0 0 14px; }
+.gp-cols p { color: var(--muted); max-width: 68ch; }
+.gp-cols h2 + p, .gp-cols p + h2 { margin-top: 0; }
+.gp-cols p + h2 { margin-top: 36px; }
+.gp-near, .hub ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.gp-near a, .hub a { display: block; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); transition: border-color .2s, transform .2s; }
+.gp-near a:hover, .hub a:hover { border-color: var(--amber); transform: translateY(-2px); }
+.gp-near b, .hub b { display: block; }
+.gp-near span, .hub span { color: var(--muted); font-size: 13.5px; }
+.hub { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 28px; }
+.hub h2 { font: 700 20px var(--display); margin-bottom: 12px; }
+@media (max-width: 860px) { .gp-grid, .gp-cols { grid-template-columns: 1fr; } .gp-map { height: 300px; } }

@@ -4,24 +4,46 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#070b14">
-  <title>Parkareto Marketplace</title>
-  <meta name="description" content="Find and book parking in Athens at garages running Parkareto.">
+  <title>Parking in Athens · live free spaces &amp; online booking | Parkareto</title>
+  <meta name="description" content="Find and book parking in Athens: Syntagma, Plaka, Monastiraki, Kolonaki, Piraeus, Glyfada, Kifisia and the airport. Live free spaces, prices from €1.50/h and instant reservations. Πάρκινγκ στην Αθήνα.">
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300&family=Unbounded:wght@600;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="canonical" href="https://parkareto.example/marketplace">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Parkareto">
+  <meta property="og:title" content="Parking in Athens · live free spaces &amp; online booking | Parkareto">
+  <meta property="og:description" content="Find and book parking in Athens: Syntagma, Plaka, Monastiraki, Kolonaki, Piraeus, Glyfada, Kifisia and the airport. Live free spaces, prices from €1.50/h and instant reservations. Πάρκινγκ στην Αθήνα.">
+  <meta property="og:url" content="https://parkareto.example/marketplace">
+  <meta property="og:image" content="https://parkareto.example/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Parkareto: booth and barrier logo over a dark parking control room">
+  <meta property="og:locale" content="en_GB">
+  <meta property="og:locale:alternate" content="el_GR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Parking in Athens · live free spaces &amp; online booking | Parkareto">
+  <meta name="twitter:description" content="Find and book parking in Athens: Syntagma, Plaka, Monastiraki, Kolonaki, Piraeus, Glyfada, Kifisia and the airport. Live free spaces, prices from €1.50/h and instant reservations. Πάρκινγκ στην Αθήνα.">
+  <meta name="twitter:image" content="https://parkareto.example/assets/og-image.png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Can I cancel a reservation?", "acceptedAnswer": {"@type": "Answer", "text": "Yes — free cancellation up to 30 minutes before your start time, directly from “My bookings”."}}, {"@type": "Question", "name": "What if I stay longer than booked?", "acceptedAnswer": {"@type": "Answer", "text": "Overtime is billed at the hourly rate, rounded to 15 minutes, and capped at the daily rate."}}, {"@type": "Question", "name": "Do you support Greek plates and foreign plates?", "acceptedAnswer": {"@type": "Answer", "text": "Both. Enter the plate exactly as shown; Greek letters (e.g. ΙΚΧ) and Latin letters are both accepted."}}, {"@type": "Question", "name": "Can my company book for its drivers?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Business accounts get monthly invoicing with VAT number (ΑΦΜ), multiple drivers and spending limits."}}, {"@type": "Question", "name": "Is the airport covered?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, long-term parking at Athens International Airport can be booked for multiple days with the daily rate applied."}}]}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Parkareto", "item": "https://parkareto.example/"}, {"@type": "ListItem", "position": 2, "name": "Parking in Athens", "item": "https://parkareto.example/marketplace"}]}</script>
+  <link rel="preload" href="fonts/manrope-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/unbounded-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="fonts.css">
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
   <link rel="stylesheet" href="marketplace.css">
 </head>
 <body>
   <header class="nav">
     <div class="container nav-inner">
-      <a href="index.html" class="brand"><img class="logo-img" src="assets/logo.svg" alt="" width="70" height="42"><span class="brand-t"><b class="chrome">PARKARETO</b><small>Marketplace · Athens</small></span></a>
+      <a href="/" class="brand"><img class="logo-img" src="assets/logo.svg" alt="" width="70" height="42"><span class="brand-t"><b class="chrome">PARKARETO</b><small>Marketplace · Athens</small></span></a>
       <nav class="nav-links" id="navLinks">
         <a href="#find">Find parking</a>
         <a href="#zones">Street parking</a>
         <a href="#how">How it works</a>
         <a href="#faq">FAQ</a>
-        <a href="index.html">For garages</a>
+        <a href="/parking">All car parks</a>
+        <a href="/">For garages</a>
         <a href="#" class="btn btn-ghost" id="openBookings">My bookings <span class="badge" id="bookingCount">0</span></a>
       </nav>
       <button class="menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
@@ -146,8 +168,8 @@
           <p>Garages on Parkareto Pro and Enterprise appear on this marketplace with live availability. Drivers book, your gate reads their plate, and the receipt goes to myDATA.</p>
         </div>
         <div class="stores">
-          <a class="store" href="index.html#pricing">See plans</a>
-          <a class="store alt" href="index.html#demo">Book a demo</a>
+          <a class="store" href="/#pricing">See plans</a>
+          <a class="store alt" href="/#demo">Book a demo</a>
         </div>
       </div>
     </div>
@@ -166,9 +188,9 @@
 
   <footer class="footer">
     <div class="container footer-inner">
-      <div><a href="index.html" class="brand"><img class="logo-img" src="assets/logo.svg" alt="" width="70" height="42"><span class="brand-t"><b class="chrome">PARKARETO</b><small>Marketplace · Athens</small></span></a><p>Live parking availability at Parkareto garages across Athens.</p></div>
+      <div><a href="/" class="brand"><img class="logo-img" src="assets/logo.svg" alt="" width="70" height="42"><span class="brand-t"><b class="chrome">PARKARETO</b><small>Marketplace · Athens</small></span></a><p>Live parking availability at Parkareto garages across Athens.</p></div>
       <div><b>Areas</b><p>Syntagma · Plaka · Kolonaki · Piraeus · Glyfada · Kifisia</p></div>
-      <div><b>For garages</b><p><a href="index.html">Parkareto</a><br><a href="index.html#pricing">Plans &amp; pricing</a><br>sales@parkareto.example</p></div>
+      <div><b>For garages</b><p><a href="/">Parkareto</a><br><a href="/#pricing">Plans &amp; pricing</a><br>sales@parkareto.example</p></div>
     </div>
     <div class="container copy">© <span id="year"></span> Parkareto. Demo data — locations, prices and availability are illustrative.</div>
   </footer>
@@ -207,6 +229,17 @@
       <button class="close" data-close>×</button>
       <h3>My bookings</h3>
       <div id="bookingsList"></div>
+    </div>
+  </div>
+
+  <!-- Booking ticket -->
+  <div class="modal" id="ticketModal" hidden>
+    <div class="ticket-wrap">
+      <div class="slot" aria-hidden="true"></div>
+      <div class="ticket" role="dialog" aria-label="Booking confirmed">
+        <div id="ticketBody"></div>
+        <button class="btn btn-primary full" data-close>Done</button>
+      </div>
     </div>
   </div>
 

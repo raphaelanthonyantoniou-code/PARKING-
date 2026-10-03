@@ -9,6 +9,8 @@
   const $ = (sel) => document.querySelector(sel);
   const euro = (n) => "€" + n.toFixed(2);
   const state = { query: "", filters: new Set(), sort: "price", activeId: null, userPos: null };
+  // Set to true once the Parkareto server answers; otherwise the page runs on data.js alone.
+  const API = { online: false };
 
   // ---------- Pricing ----------
   // Hourly rate, capped at the daily rate for each 24h block.
@@ -60,10 +62,10 @@
   }).addTo(map);
 
   const markers = {};
-  function pinIcon(p) {
+  function pinIcon(p, ping) {
     return L.divIcon({
       className: "",
-      html: `<div class="pin ${level(p)}"><span>P</span></div>`,
+      html: `<div class="pin ${level(p)}${ping ? " ping" : ""}"><span>P</span></div>`,
       iconSize: [34, 34],
       iconAnchor: [17, 34],
       popupAnchor: [0, -30],
@@ -107,12 +109,12 @@
     const list = $("#list");
 
     list.innerHTML = items.length
-      ? items.map((p) => {
+      ? items.map((p, i) => {
           const lv = level(p);
           const availText = lv === "full" ? "Full" : `${p.free} free`;
           const dist = state.userPos ? ` · ${distanceKm(state.userPos, [p.lat, p.lng]).toFixed(1)} km` : "";
           const occ = Math.round(((p.total - p.free) / p.total) * 100);
-          return `<article class="card ${p.id === state.activeId ? "active" : ""}" data-id="${p.id}">
+          return `<article class="card ${p.id === state.activeId ? "active" : ""}" data-id="${p.id}" style="--i:${Math.min(i, 12)}">
             <div class="card-top">
               <div><h3>${escapeHtml(p.name)}</h3><div class="area">${escapeHtml(p.area)}${dist}</div></div>
               <div class="price"><strong>${euro(p.price)}</strong><small>/ hour · ${euro(p.daily)}/day</small></div>
@@ -175,7 +177,17 @@
   }
 
   $("#bHours").addEventListener("change", updateTotal);
-  $("#bookForm").addEventListener("submit", (e) => {
+  function afterBooked(rec) {
+    const list = loadBookings();
+    list.unshift(rec);
+    saveBookings(list);
+    $("#bookModal").hidden = true;
+    $("#bookForm").reset();
+    render();
+    showTicket(rec);
+  }
+
+  $("#bookForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const hours = Number($("#bHours").value);
     const plate = $("#bPlate").value.trim().toUpperCase();
@@ -184,25 +196,70 @@
       toast("Please choose a start time in the future.");
       return;
     }
-    const list = loadBookings();
-    list.unshift({
-      code: "ATH-" + Math.random().toString(36).slice(2, 7).toUpperCase(),
-      parkingId: booking.id,
-      name: booking.name,
-      area: booking.area,
-      start: start.toISOString(),
-      hours,
-      plate,
-      total: cost(booking, hours),
-    });
-    saveBookings(list);
+    const btn = $("#bookForm button[type=submit]");
+    if (API.online) {
+      btn.disabled = true;
+      try {
+        const res = await fetch("/api/bookings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ parkingId: booking.id, start: start.toISOString(), hours, plate, email: $("#bEmail").value.trim() }),
+        });
+        const body = await res.json();
+        if (!res.ok) {
+          const first = body.fields && Object.values(body.fields)[0];
+          toast(first || body.error || "Booking failed. Try again.");
+          return;
+        }
+        booking.free = Math.max(0, booking.free - 1);
+        markers[booking.id].setIcon(pinIcon(booking, true)).setPopupContent(popupHtml(booking));
+        afterBooked({ ...body, server: true });
+      } catch (_) {
+        toast("Couldn't reach the server. Check your connection and try again.");
+      } finally {
+        btn.disabled = false;
+      }
+      return;
+    }
     booking.free = Math.max(0, booking.free - 1);
     markers[booking.id].setIcon(pinIcon(booking)).setPopupContent(popupHtml(booking));
-    $("#bookModal").hidden = true;
-    $("#bookForm").reset();
-    render();
-    toast(`Reserved! Code ${list[0].code} — see My bookings.`);
+    afterBooked({
+      code: "ATH-" + Math.random().toString(36).slice(2, 8).toUpperCase(),
+      parkingId: booking.id, name: booking.name, area: booking.area,
+      start: start.toISOString(), hours, plate, total: cost(booking, hours),
+    });
   });
+
+  // ---------- Ticket confirmation ----------
+  function qrCells(seed) {
+    // Decorative code pattern derived from the booking code, with three finder squares.
+    let h = 0; for (const ch of seed) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    const n = 17, cells = [];
+    const finder = (x, y) => [[0, 0], [n - 7, 0], [0, n - 7]].some(([fx, fy]) => x >= fx && x < fx + 7 && y >= fy && y < fy + 7);
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+      if (finder(x, y)) continue;
+      h = (h * 1103515245 + 12345) >>> 0;
+      if (h & 0x10000) cells.push(`<rect x="${x}" y="${y}" width="1" height="1"/>`);
+    }
+    const sq = (fx, fy) => `<rect x="${fx + .5}" y="${fy + .5}" width="6" height="6" fill="none" stroke="#0b0c10"/><rect x="${fx + 2}" y="${fy + 2}" width="3" height="3"/>`;
+    return `<svg viewBox="-1 -1 ${n + 2} ${n + 2}" aria-hidden="true"><rect x="-1" y="-1" width="${n + 2}" height="${n + 2}" fill="#fff"/><g fill="#0b0c10">${cells.join("")}${sq(0, 0)}${sq(n - 7, 0)}${sq(0, n - 7)}</g></svg>`;
+  }
+  function showTicket(b) {
+    const start = new Date(b.start), end = new Date(start.getTime() + b.hours * 3600000);
+    const fmt = (d) => d.toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+    $("#ticketBody").innerHTML = `
+      <div class="tk-head"><img src="assets/logo.svg" alt="" width="60" height="36"><span>PARKING TICKET</span></div>
+      <div class="tk-place">${escapeHtml(b.name)}<small>${escapeHtml(b.area)}</small></div>
+      <div class="tk-row"><span>Plate</span><b>${escapeHtml(b.plate)}</b></div>
+      <div class="tk-row"><span>From</span><b>${fmt(start)}</b></div>
+      <div class="tk-row"><span>Until</span><b>${fmt(end)}</b></div>
+      <div class="tk-row tk-total"><span>Total</span><b>${euro(b.total)}</b></div>
+      <div class="tk-code">${qrCells(b.code)}<div><small>Booking code</small><b>${escapeHtml(b.code)}</b><em>${b.server ? "The gate camera will read your plate." : "Demo booking, saved in this browser."}</em></div></div>`;
+    const m = $("#ticketModal");
+    m.hidden = false;
+    const t = $(".ticket", m);
+    t.classList.remove("printing"); void t.offsetWidth; t.classList.add("printing");
+  }
 
   function renderBookings() {
     const list = loadBookings();
@@ -226,6 +283,12 @@
     const i = e.target.dataset.cancel;
     if (i === undefined) return;
     const list = loadBookings();
+    const target = list[Number(i)];
+    if (target && target.server && API.online) {
+      fetch(`/api/bookings/${encodeURIComponent(target.code)}/cancel`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plate: target.plate }),
+      }).then((r) => { if (!r.ok && r.status !== 409) toast("The server couldn't cancel it. Try again."); }).catch(() => toast("Couldn't reach the server."));
+    }
     const [removed] = list.splice(Number(i), 1);
     const p = parkings.find((x) => x.id === removed.parkingId);
     if (p) {
@@ -262,7 +325,12 @@
     if (card) setActive(Number(card.dataset.id), true);
   });
 
-  $("#query").addEventListener("input", (e) => { state.query = e.target.value; render(); });
+  function stagger() {
+    const l = $("#list");
+    l.classList.remove("stagger"); void l.offsetWidth; l.classList.add("stagger");
+    clearTimeout(stagger.t); stagger.t = setTimeout(() => l.classList.remove("stagger"), 900);
+  }
+  $("#query").addEventListener("input", (e) => { state.query = e.target.value; render(); stagger(); });
   $("#query").addEventListener("change", fitVisible);
 
   $("#chips").addEventListener("click", (e) => {
@@ -272,6 +340,7 @@
     state.filters.has(f) ? state.filters.delete(f) : state.filters.add(f);
     chip.classList.toggle("on");
     render();
+    stagger();
     fitVisible();
   });
 
@@ -324,6 +393,7 @@
 
   // ---------- Simulated live availability ----------
   setInterval(() => {
+    if (API.online) return;
     const p = parkings[Math.floor(Math.random() * parkings.length)];
     const delta = Math.random() < 0.5 ? -1 : 1;
     p.free = Math.min(p.total, Math.max(0, p.free + delta * Math.ceil(Math.random() * 3)));
@@ -339,8 +409,49 @@
     $("#demoTimer").textContent = `${pad(Math.floor(secs / 3600))}:${pad(Math.floor((secs % 3600) / 60))}:${pad(secs % 60)}`;
   }, 1000);
 
+  // ---------- Server connection ----------
+  function applyFree(id, free) {
+    const p = parkings.find((x) => x.id === id);
+    if (!p || p.free === free) return;
+    p.free = free;
+    markers[p.id].setIcon(pinIcon(p, true)).setPopupContent(popupHtml(p));
+    clearTimeout(markers[p.id].pingT);
+    markers[p.id].pingT = setTimeout(() => markers[p.id].setIcon(pinIcon(p)), 1300);
+  }
+  async function connect() {
+    if (!/^https?:$/.test(location.protocol)) return;
+    try {
+      const res = await fetch("/api/parkings", { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(3000) });
+      if (!res.ok || !(res.headers.get("content-type") || "").includes("json")) return;
+      const list = await res.json();
+      list.forEach((g) => {
+        const p = parkings.find((x) => x.id === g.id);
+        if (p) Object.assign(p, { name: g.name, area: g.area, price: g.price, daily: g.daily, total: g.total, free: g.free, features: g.features });
+      });
+      API.online = true;
+      parkings.forEach((p) => markers[p.id].setIcon(pinIcon(p)).setPopupContent(popupHtml(p)));
+      render();
+      if (window.EventSource) {
+        const es = new EventSource("/api/stream");
+        let pending = false;
+        es.addEventListener("availability", (e) => {
+          const d = JSON.parse(e.data);
+          applyFree(d.id, d.free);
+          if (!pending) { pending = true; requestAnimationFrame(() => { pending = false; render(); }); }
+        });
+      }
+    } catch (_) { /* no server: keep the built-in demo data */ }
+  }
+
   $("#year").textContent = new Date().getFullYear();
   saveBookings(loadBookings());
   updateCalc();
   render();
+  connect().finally(() => {
+    const want = Number(new URLSearchParams(location.search).get("book"));
+    if (want) {
+      const p = parkings.find((x) => x.id === want);
+      if (p) { setActive(p.id, true); openBooking(p.id); }
+    }
+  });
 })();

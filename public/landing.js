@@ -111,9 +111,21 @@
     $("#mOcc").textContent = occ;
     $("#mFreePct").textContent = ((free / stats.total) * 100).toFixed(1) + "% available";
     $("#mOccPct").textContent = ((occ / stats.total) * 100).toFixed(1) + "% occupied";
-    $("#mRev").textContent = euro(stats.rev);
+    tweenRev(stats.rev);
     $("#mIO").textContent = `${stats.ins} in · ${stats.outs} out`;
     $("#liveMeter").style.width = Math.round((occ / stats.total) * 100) + "%";
+  }
+
+  let shownRev = stats.rev;
+  function tweenRev(to) {
+    const from = shownRev, t0 = performance.now();
+    shownRev = to;
+    if (reduce) { $("#mRev").textContent = euro(to); return; }
+    (function step(t) {
+      const k = Math.min(1, (t - t0) / 700);
+      $("#mRev").textContent = euro(from + (to - from) * (1 - Math.pow(1 - k, 3)));
+      if (k < 1) requestAnimationFrame(step);
+    })(t0);
   }
 
   function pushRecent(p, out, extra) {
@@ -332,9 +344,33 @@
   }
 
   // ---------- Pricing toggle ----------
+  // Rolling-digit number change, like a car odometer.
+  function odometer(el, text) {
+    if (reduce) { el.textContent = text; return; }
+    const old = el.dataset.odo || el.textContent;
+    el.dataset.odo = text;
+    el.setAttribute("aria-label", text);
+    const wrap = document.createElement("span");
+    wrap.className = "odo";
+    wrap.setAttribute("aria-hidden", "true");
+    [...text].forEach((ch, i) => {
+      if (!/\d/.test(ch)) { wrap.appendChild(document.createTextNode(ch)); return; }
+      const d = document.createElement("span");
+      d.className = "odo-d";
+      const col = document.createElement("span");
+      col.innerHTML = Array.from({ length: 20 }, (_, n) => `<i>${n % 10}</i>`).join("");
+      const prev = /\d/.test(old[i] || "") ? Number(old[i]) : 0;
+      col.style.transform = `translateY(-${prev}em)`;
+      d.appendChild(col);
+      wrap.appendChild(d);
+      requestAnimationFrame(() => requestAnimationFrame(() => { col.style.transitionDelay = i * 60 + "ms"; col.style.transform = `translateY(-${10 + Number(ch)}em)`; }));
+    });
+    el.textContent = "";
+    el.appendChild(wrap);
+  }
   function setBilling(period) {
     $$(".billing button").forEach((b) => b.classList.toggle("on", b.dataset.bill === period));
-    $$(".price b[data-m]").forEach((b) => (b.textContent = "€" + Number(period === "year" ? b.dataset.y : b.dataset.m).toLocaleString("en-US")));
+    $$(".price b[data-m]").forEach((b) => odometer(b, "€" + Number(period === "year" ? b.dataset.y : b.dataset.m).toLocaleString("en-US")));
     $$(".price .per").forEach((s) => (s.textContent = period === "year" ? "/ year" : "/ month"));
     $$(".addons em[data-m]").forEach((e) => (e.textContent = "€" + (period === "year" ? e.dataset.y + " / year" : e.dataset.m + " / month")));
   }
@@ -363,7 +399,7 @@
 
   // ---------- Demo form ----------
   const form = $("#demoForm"), msg = $("#formMsg");
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const required = [$("#fName"), $("#fEmail")];
     let ok = true;
@@ -374,10 +410,72 @@
       return;
     }
     const d = Object.fromEntries(new FormData(form));
-    const body = `Name: ${d.name}\nCompany: ${d.company}\nEmail: ${d.email}\nPhone: ${d.phone}\nBays: ${d.bays}\nPlan: ${d.plan}\n\n${d.message}`;
-    window.location.href = `mailto:sales@parkareto.example?subject=${encodeURIComponent("Parkareto demo request")}&body=${encodeURIComponent(body)}`;
-    msg.className = "form-msg ok";
-    msg.textContent = `Thanks, ${d.name.split(" ")[0]}. Your email app is opening with the request filled in. Send it and we'll get back to you.`;
+    const btn = $("button[type=submit]", form);
+    btn.disabled = true;
+    msg.className = "form-msg";
+    msg.textContent = "Sending…";
+    try {
+      const res = await fetch("/api/demo-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d), signal: AbortSignal.timeout(8000) });
+      if (res.status === 404 || res.status === 405 || !(res.headers.get("content-type") || "").includes("json")) throw new Error("no-api");
+      const body = await res.json();
+      if (!res.ok) { msg.className = "form-msg err"; msg.textContent = body.error || "That didn't go through. Try again."; return; }
+      form.reset();
+      msg.className = "form-msg ok";
+      msg.textContent = `Thanks, ${d.name.split(" ")[0]}. We've got your request and will be in touch shortly.`;
+      form.classList.add("sent");
+    } catch (err) {
+      // No server (static preview): hand the request to the visitor's email app instead.
+      const body = `Name: ${d.name}\nCompany: ${d.company}\nEmail: ${d.email}\nPhone: ${d.phone}\nBays: ${d.bays}\nPlan: ${d.plan}\n\n${d.message}`;
+      window.location.href = `mailto:sales@parkareto.example?subject=${encodeURIComponent("Parkareto demo request")}&body=${encodeURIComponent(body)}`;
+      msg.className = "form-msg ok";
+      msg.textContent = `Thanks, ${d.name.split(" ")[0]}. Your email app is opening with the request filled in. Send it and we'll get back to you.`;
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ---------- Scroll road car ----------
+  const srCar = $("#srCar");
+  if (srCar && !reduce) {
+    let lastY = window.scrollY;
+    const road = srCar.parentElement;
+    const moveCar = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const k = max > 0 ? window.scrollY / max : 0;
+      srCar.style.setProperty("--sy", (k * (road.clientHeight - 36)).toFixed(1) + "px");
+      if (window.scrollY !== lastY) srCar.style.setProperty("--sr", window.scrollY > lastY ? "180deg" : "0deg");
+      lastY = window.scrollY;
+    };
+    window.addEventListener("scroll", moveCar, { passive: true });
+    moveCar();
+  }
+
+  // ---------- Kicker decode effect ----------
+  const GLYPHS = "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ0123456789#/";
+  function decode(el) {
+    const final = el.textContent;
+    let frame = 0;
+    const total = 18;
+    (function tick() {
+      el.textContent = [...final].map((c, i) => (c === " " || i < (frame / total) * final.length ? c : GLYPHS[(Math.random() * GLYPHS.length) | 0])).join("");
+      if (++frame <= total) setTimeout(tick, 35); else el.textContent = final;
+    })();
+  }
+  if (!reduce && "IntersectionObserver" in window) {
+    const ko = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { decode(e.target); ko.unobserve(e.target); } }), { threshold: 0.6 });
+    $$(".kicker").forEach((k) => { k.setAttribute("aria-label", k.textContent); ko.observe(k); });
+  }
+
+  // ---------- Button ripple ----------
+  document.addEventListener("pointerdown", (e) => {
+    const b = e.target.closest(".btn");
+    if (!b || reduce) return;
+    const r = b.getBoundingClientRect(), size = Math.max(r.width, r.height);
+    const s = document.createElement("span");
+    s.className = "ripple";
+    s.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - r.left - size / 2}px;top:${e.clientY - r.top - size / 2}px`;
+    b.appendChild(s);
+    setTimeout(() => s.remove(), 700);
   });
 
   $("#year").textContent = new Date().getFullYear();

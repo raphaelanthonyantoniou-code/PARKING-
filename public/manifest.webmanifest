@@ -1,0 +1,14 @@
+{
+  "name": "Parkareto",
+  "short_name": "Parkareto",
+  "description": "Smart parking management for Greek car parks, and live parking in Athens.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#070b14",
+  "theme_color": "#070b14",
+  "icons": [
+    { "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/assets/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/assets/logo.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

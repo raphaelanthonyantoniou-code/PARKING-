@@ -1,0 +1,49 @@
+:root { --bg: #070b14; --panel: #0f1728; --line: rgba(148,163,184,.16); --text: #e9eef7; --muted: #8d99ad; --amber: #f6b70b; --green: #22c55e; --red: #ef4444; --orange: #f59e0b; color-scheme: dark; }
+[hidden] { display: none !important; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 "Manrope", system-ui, sans-serif; }
+a { color: inherit; }
+.chrome { font-family: "Montserrat", sans-serif; font-weight: 300; letter-spacing: .14em; background: linear-gradient(180deg, #fff, #c9ced6 28%, #6f7682 50%, #e9ecf1 64%, #9aa1ad 82%, #f4f6f9); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.top { display: flex; justify-content: space-between; align-items: center; padding: 14px 24px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: rgba(7,11,20,.92); backdrop-filter: blur(10px); z-index: 2; }
+.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+.brand b { font-size: 19px; }
+.brand span { font-size: 12px; font-weight: 700; color: var(--amber); border: 1px solid rgba(246,183,11,.4); padding: 2px 8px; border-radius: 6px; }
+main { width: min(1280px, 100% - 32px); margin: 28px auto 60px; }
+button { font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; border-radius: 10px; padding: 10px 16px; border: 1px solid var(--amber); background: var(--amber); color: #1a1203; }
+button.ghost { background: transparent; color: var(--text); border-color: var(--line); }
+button.ghost:hover { border-color: var(--amber); }
+input, select { font: inherit; color: var(--text); background: rgba(255,255,255,.04); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; }
+input:focus, select:focus, button:focus-visible { outline: 2px solid var(--amber); outline-offset: 1px; }
+.login { max-width: 380px; margin: 10vh auto; display: grid; gap: 14px; padding: 28px; border: 1px solid var(--line); border-radius: 18px; background: var(--panel); }
+.login h1 { margin: 0; font-size: 24px; }
+.login p { margin: 0; color: var(--muted); }
+.login label { display: grid; gap: 6px; font-weight: 600; color: var(--muted); font-size: 13.5px; }
+.msg { color: var(--red) !important; min-height: 1.4em; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 22px; }
+.kpi { padding: 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel); }
+.kpi small { color: var(--muted); display: block; font-size: 12.5px; }
+.kpi b { font-size: 26px; font-variant-numeric: tabular-nums; }
+.tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--line); margin-bottom: 16px; flex-wrap: wrap; }
+.tabs button { background: none; border: 0; border-bottom: 2px solid transparent; border-radius: 0; color: var(--muted); padding: 10px 14px; }
+.tabs button.on { color: var(--text); border-bottom-color: var(--amber); }
+.bar { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.bar input { flex: 1 1 260px; }
+.hint { color: var(--muted); margin: 0 0 12px; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; background: rgba(255,255,255,.02); white-space: nowrap; }
+tbody tr:hover { background: rgba(255,255,255,.02); }
+td.num, .mono { font-family: "JetBrains Mono", monospace; font-variant-numeric: tabular-nums; }
+td small { color: var(--muted); display: block; }
+td.msg-cell { max-width: 320px; color: var(--muted); }
+td input { width: 90px; padding: 6px 8px; }
+.st { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
+.st.active, .st.won { background: rgba(34,197,94,.15); color: #6ee7a0; }
+.st.cancelled, .st.lost { background: rgba(239,68,68,.15); color: #fca5a5; }
+td button { padding: 5px 10px; font-size: 12.5px; }
+.empty { color: var(--muted); text-align: center; padding: 28px; }
+.saved { animation: saved 1s; }
+@keyframes saved { 30% { background: rgba(34,197,94,.2); } }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translate(-50%, 120px); background: var(--panel); border: 1px solid rgba(246,183,11,.45); padding: 10px 16px; border-radius: 12px; transition: transform .3s; }
+.toast.show { transform: translate(-50%, 0); }

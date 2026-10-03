@@ -1,0 +1,14 @@
+{
+  "name": "parkareto",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Parkareto website, driver marketplace and API",
+  "main": "server/server.js",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server/server.js",
+    "dev": "node --disable-warning=ExperimentalWarning --watch server/server.js",
+    "test": "node --disable-warning=ExperimentalWarning --test"
+  },
+  "license": "UNLICENSED"
+}

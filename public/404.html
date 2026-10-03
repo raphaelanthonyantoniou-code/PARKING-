@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Page not found | Parkareto</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
+  <link rel="preload" href="/fonts/manrope-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/unbounded-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/fonts.css">
+  <link rel="stylesheet" href="/marketplace.css">
+  <link rel="stylesheet" href="/pages.css">
+</head>
+<body>
+  <main class="nf">
+    <img src="/assets/logo.svg" alt="" width="200" height="120" class="nf-logo">
+    <h1>This bay is empty.</h1>
+    <p>The page you were looking for isn't here. It may have moved, or the link may be mistyped.</p>
+    <div class="gp-cta"><a class="btn btn-primary" href="/">Go to Parkareto</a><a class="btn btn-ghost" href="/marketplace">Find parking in Athens</a></div>
+  </main>
+  <style>
+    .nf { min-height: 100vh; display: grid; place-content: center; justify-items: center; text-align: center; gap: 14px; padding: 32px 16px; }
+    .nf h1 { font: 800 clamp(30px, 6vw, 56px) var(--display); margin: 0; }
+    .nf p { color: var(--muted); max-width: 46ch; margin: 0 0 8px; }
+    .nf-logo { width: 200px; height: auto; animation: nfBob 3s ease-in-out infinite; }
+    @keyframes nfBob { 50% { transform: translateY(-8px) rotate(-2deg); } }
+  </style>
+</body>
+</html>

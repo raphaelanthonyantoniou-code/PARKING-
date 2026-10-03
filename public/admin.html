@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Parkareto Admin</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
+  <link rel="preload" href="/fonts/manrope-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/unbounded-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/fonts.css">
+  <link rel="stylesheet" href="/admin.css">
+</head>
+<body>
+  <header class="top">
+    <a href="/" class="brand"><img src="/assets/logo.svg" alt="" width="56" height="34"><b class="chrome">PARKARETO</b><span>Admin</span></a>
+    <button id="logout" class="ghost" hidden>Sign out</button>
+  </header>
+
+  <main>
+    <form id="login" class="login">
+      <h1>Sign in</h1>
+      <p>Enter the admin token set in the server's <code>ADMIN_TOKEN</code>.</p>
+      <label for="token">Admin token<input id="token" type="password" autocomplete="current-password" required></label>
+      <button type="submit">Sign in</button>
+      <p class="msg" id="loginMsg" role="alert"></p>
+    </form>
+
+    <section id="app" hidden>
+      <div class="kpis" id="kpis"></div>
+      <nav class="tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-tab="leads" class="on">Demo requests</button>
+        <button role="tab" aria-selected="false" data-tab="bookings">Bookings</button>
+        <button role="tab" aria-selected="false" data-tab="garages">Car parks</button>
+      </nav>
+      <div class="panel" id="tab-leads">
+        <div class="bar"><input id="leadSearch" type="search" placeholder="Search name, company or email"><button id="csv" class="ghost">Download CSV</button></div>
+        <div class="table-wrap"><table><thead><tr><th>Received</th><th>Name</th><th>Company</th><th>Contact</th><th>Bays</th><th>Plan</th><th>Message</th><th>Status</th></tr></thead><tbody id="leads"></tbody></table></div>
+      </div>
+      <div class="panel" id="tab-bookings" hidden>
+        <div class="bar"><input id="bookSearch" type="search" placeholder="Search code, plate or car park"></div>
+        <div class="table-wrap"><table><thead><tr><th>Code</th><th>Car park</th><th>Plate</th><th>Start</th><th>Hours</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody id="bookings"></tbody></table></div>
+      </div>
+      <div class="panel" id="tab-garages" hidden>
+        <p class="hint">Edit a value and press Enter or leave the field to save. Free spaces update the live marketplace immediately.</p>
+        <div class="table-wrap"><table><thead><tr><th>Car park</th><th>Area</th><th>Free</th><th>Total</th><th>€ / hour</th><th>€ / day</th><th>Page</th></tr></thead><tbody id="garages"></tbody></table></div>
+      </div>
+    </section>
+  </main>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="/admin.js"></script>
+</body>
+</html>
