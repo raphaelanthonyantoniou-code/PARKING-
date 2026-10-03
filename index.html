@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="landing.css">
+  <link rel="stylesheet" href="garage.css">
   <script>document.documentElement.classList.add("js")</script>
 </head>
 <body>
@@ -297,13 +298,15 @@
     <section class="sec" id="garage">
       <div class="wrap garage">
         <div class="sec-copy">
-          <span class="kicker">Live Parking</span>
+          <span class="kicker">Live Parking 3D</span>
           <h2>Every bay, every floor, as it happens.</h2>
-          <p>Parkareto keeps a live model of your garage. Cars appear in their bays as they park and leave as they exit. Reserved, disabled and EV bays keep their colour so the team can see them at a glance.</p>
-          <div class="floors" role="tablist" aria-label="Floor">
-            <button role="tab" aria-selected="false" data-floor="-1">Όροφος −1</button>
-            <button role="tab" aria-selected="true" class="on" data-floor="0">Ισόγειο</button>
-            <button role="tab" aria-selected="false" data-floor="1">Όροφος 1</button>
+          <p>Parkareto keeps a live model of your garage. Barriers lift, cars drive in and park, EV bays charge, and cars leave again. Hover over a bay to see who is in it and for how long.</p>
+          <div class="g-controls" role="group" aria-label="Floor and view">
+            <button type="button" data-floor="-1" aria-pressed="false">Όροφος −1</button>
+            <button type="button" data-floor="0" aria-pressed="true" class="on">Ισόγειο</button>
+            <button type="button" data-floor="1" aria-pressed="false">Όροφος 1</button>
+            <span class="sep" aria-hidden="true"></span>
+            <button type="button" class="view" id="gStack" aria-pressed="false">All floors</button>
           </div>
           <div class="g-stats">
             <div><b id="gFree">0</b><span><i class="g"></i>Available</span></div>
@@ -311,19 +314,15 @@
             <div><b id="gRes">0</b><span><i class="r"></i>Reserved</span></div>
             <div><b id="gEv">0</b><span><i class="e"></i>Charging</span></div>
           </div>
+          <div class="g-occ" title="Occupancy"><i id="gOccBar"></i></div>
           <ul class="g-feed" id="gFeed" aria-live="polite"></ul>
         </div>
-        <div class="g3d" id="g3d" aria-label="3D view of a garage floor with cars entering and leaving bays">
+        <div class="g3d" id="g3d" role="img" aria-label="3D view of a garage floor where cars enter through a barrier, park in bays and leave">
           <div class="g-scale" id="gScale">
-            <div class="floor3d" id="floor3d">
-              <div class="paint lane-line"></div>
-              <span class="paint word w-in">ENTRY →</span>
-              <span class="paint word w-out">EXIT →</span>
-              <span class="paint zone">A</span>
-              <span class="paint arrow a1">➜</span><span class="paint arrow a2">➜</span>
-            </div>
+            <div class="floor3d" id="floor3d"></div>
           </div>
-          <div class="g-hint">Move your pointer to rotate</div>
+          <div class="g-level" id="gLevel">ΙΣΟΓΕΙΟ · ZONE A</div>
+          <div class="g-hint"><kbd>drag</kbd> to rotate · <kbd>hover</kbd> a bay for details</div>
         </div>
       </div>
     </section>
@@ -655,5 +654,6 @@
   </footer>
 
   <script src="landing.js"></script>
+  <script src="garage.js"></script>
 </body>
 </html>
