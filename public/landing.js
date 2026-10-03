@@ -315,7 +315,7 @@
   });
 
   // ---------- Reveal + counters ----------
-  const revealTargets = $$(".sec-head, .sec-copy, .tile, .flow li, .plan, .nums div, .anpr, .receipt-wrap, .est-out, .market-card, .demo");
+  const revealTargets = $$(".sec-head, .sec-copy, .tile, .flow li, .plan, .nums div, .anpr, .est-out, .market-card, .demo");
   revealTargets.forEach((el) => el.classList.add("rv"));
   function countUp(el) {
     const end = Number(el.dataset.count), pre = el.dataset.prefix || "", suf = el.dataset.suffix || "";

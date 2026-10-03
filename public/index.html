@@ -34,6 +34,7 @@
   <link rel="stylesheet" href="fonts.css">
   <link rel="stylesheet" href="landing.css">
   <link rel="stylesheet" href="garage.css">
+  <link rel="stylesheet" href="receipt.css">
   <script>document.documentElement.classList.add("js")</script>
 </head>
 <body>
@@ -495,28 +496,38 @@
     <!-- MYDATA -->
     <section class="sec" id="mydata">
       <div class="wrap split rev">
-        <div class="receipt-wrap">
-          <div class="receipt">
-            <div class="r-head"><img class="logo-img xs" src="assets/logo.svg" alt="" width="34" height="20"><b>PARKARETO</b><small>ΑΠΟΔΕΙΞΗ ΠΑΡΟΧΗΣ ΥΠΗΡΕΣΙΩΝ</small></div>
-            <div class="r-row"><span>Ticket</span><b>#TK-00418</b></div>
-            <div class="r-row"><span>Plate</span><b>XHT-6666</b></div>
-            <div class="r-row"><span>Entry</span><b>20:55</b></div>
-            <div class="r-row"><span>Exit</span><b>23:09</b></div>
-            <div class="r-row"><span>Duration</span><b>2h 14m</b></div>
-            <hr>
-            <div class="r-row"><span>Net</span><b>€4.84</b></div>
-            <div class="r-row"><span>ΦΠΑ 24%</span><b>€1.16</b></div>
-            <div class="r-row big"><span>Total</span><b>€6.00</b></div>
-            <hr>
-            <div class="r-mark"><div><small>ΜΑΡΚ</small><b>400001928374651</b></div><div class="qr" aria-hidden="true"></div></div>
-            <div class="r-ok"><svg><use href="#i-check"/></svg> Transmitted to AADE</div>
+        <div class="rc-stage" id="rcStage">
+          <div class="rc-tilt" id="rcTilt">
+            <div class="rc-printer" id="rcPrinter" aria-hidden="true">
+              <div class="rc-printer-top"><img src="assets/logo.svg" alt="" width="34" height="20"><span>PARKARETO · POS</span><i class="rc-led"></i></div>
+              <div class="rc-slot"></div>
+            </div>
+            <div class="rc-paper" id="rcPaper" aria-label="Sample receipt transmitted to myDATA">
+              <div class="rc-watermark" aria-hidden="true"><span>ΔΕΙΓΜΑ · SAMPLE</span></div>
+              <div class="rc-stamp" aria-hidden="true"><span>ΔΙΑΒΙΒΑΣΤΗΚΕ</span><small>myDATA · ΑΑΔΕ</small></div>
+              <div id="rcBody">
+                <div class="rc-c rc-name">PARKARETO ΣΤΑΘΜΕΥΣΗ</div>
+                <div class="rc-c rc-doc">ΑΠΟΔΕΙΞΗ ΠΑΡΟΧΗΣ ΥΠΗΡΕΣΙΩΝ</div>
+                <div class="rc-total"><span>ΣΥΝΟΛΟ</span><b>6,00 €</b></div>
+                <div class="rc-kv"><span>ΜΑΡΚ</span><b class="rc-mono">400001928374651</b></div>
+              </div>
+            </div>
           </div>
+          <ol class="rc-steps" id="rcSteps" aria-label="myDATA progress">
+            <li><i></i>Έκδοση<small>Issued</small></li>
+            <li><i></i>UID<small>Signed</small></li>
+            <li><i></i>Διαβίβαση<small>Sent to AADE</small></li>
+            <li><i></i>ΜΑΡΚ<small>Received</small></li>
+            <li><i></i>QR<small>Printed</small></li>
+          </ol>
+          <button type="button" class="btn btn-glass" id="rcReprint">Print next receipt</button>
         </div>
         <div class="sec-copy">
           <span class="kicker">myDATA / AADE</span>
           <h2>Receipts that file themselves.</h2>
           <p>Every paid ticket becomes a receipt that is sent to AADE's myDATA platform and comes back with its ΜΑΡΚ. Subscriptions and company invoices with ΑΦΜ go through the same path. Your accountant opens Parkareto and finds the month ready.</p>
           <ul class="ticks">
+            <li><svg><use href="#i-check"/></svg>ΜΑΡΚ, UID, authentication code and verification QR on every receipt</li>
             <li><svg><use href="#i-check"/></svg>Receipts and invoices with VAT (ΦΠΑ) broken out</li>
             <li><svg><use href="#i-check"/></svg>Company details looked up from the ΑΦΜ</li>
             <li><svg><use href="#i-check"/></svg>Failed transmissions flagged and retried</li>
@@ -720,5 +731,7 @@
 
   <script src="landing.js" defer></script>
   <script src="garage.js" defer></script>
+  <script src="vendor/qrcode/qrcode.js" defer></script>
+  <script src="receipt.js" defer></script>
 </body>
 </html>
