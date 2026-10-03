@@ -68,6 +68,7 @@
   let active = "0";
 
   // ---------- Static scenery ----------
+  el("i", "road road-in", floor); el("i", "road road-out", floor);
   el("i", "slab-b", floor); el("i", "slab-r", floor);
   el("i", "wall wall-t", floor); el("i", "wall wall-l a", floor); el("i", "wall wall-l b", floor);
   el("i", "paint lane-line", floor);
@@ -143,6 +144,7 @@
   const evChips = new Map();
 
   function setBay(k) {
+    if (k === hoverK) { hoverK = -1; queueMicrotask(hoverAt); }
     const s = floors[active][k], b = bays[k];
     b.className = "bay3d " + bayMeta[k].row + (s.type !== "std" ? " " + s.type : "") + (s.car ? " taken" : "");
     $(".sym", b).textContent = s.type === "res" ? "RES" : s.type === "dis" ? "♿︎" : s.type === "ev" ? "EV" : "";
@@ -303,24 +305,35 @@
   }
 
   // ---------- Tooltip ----------
-  bays.forEach((b, k) => {
-    b.addEventListener("pointerenter", () => {
-      if (dragging) return;
-      const s = floors[active][k], m = bayMeta[k];
-      b.classList.add("hover");
-      const label = { std: "Standard bay", res: "Reserved bay", dis: "Accessible bay", ev: "EV charging bay" }[s.type];
-      let body;
-      if (s.car) {
-        const mins = Math.max(1, Math.round((Date.now() - s.car.since) / 60000));
-        const dur = (mins >= 60 ? Math.floor(mins / 60) + "h " : "") + (mins % 60) + "m";
-        body = `<b>${s.car.plate}</b> <em>· parked ${dur}</em>` + (s.type === "ev" ? `<br><em>Charging</em> ${s.car.charge}%` : "");
-      } else body = s.type === "res" ? "<em>Held for a reservation</em>" : "<em>Free now</em>";
-      $("span", tip).innerHTML = `${m.id} · ${label}<br>${body}`;
-      tip.style.left = m.x + "px"; tip.style.top = m.y + "px";
-      tip.classList.add("show");
-    });
-    b.addEventListener("pointerleave", () => { b.classList.remove("hover"); tip.classList.remove("show"); });
-  });
+  // Hover is resolved from the pointer position (not enter/leave events), so it
+  // stays right while the scene sways or rotates under a still pointer.
+  let hoverK = -1, pointer = null;
+  function showTip(k) {
+    if (k === hoverK) return;
+    if (hoverK >= 0) bays[hoverK].classList.remove("hover");
+    hoverK = k;
+    if (k < 0) { tip.classList.remove("show"); return; }
+    const s = floors[active][k], m = bayMeta[k];
+    bays[k].classList.add("hover");
+    const label = { std: "Standard bay", res: "Reserved bay", dis: "Accessible bay", ev: "EV charging bay" }[s.type];
+    let body;
+    if (s.car) {
+      const mins = Math.max(1, Math.round((Date.now() - s.car.since) / 60000));
+      const dur = (mins >= 60 ? Math.floor(mins / 60) + "h " : "") + (mins % 60) + "m";
+      body = `<b>${s.car.plate}</b> <em>· parked ${dur}</em>` + (s.type === "ev" ? `<br><em>Charging</em> ${s.car.charge}%` : "");
+    } else body = s.type === "res" ? "<em>Held for a reservation</em>" : "<em>Free now</em>";
+    $("span", tip).innerHTML = `${m.id} · ${label}<br>${body}`;
+    tip.style.left = m.x + "px"; tip.style.top = m.y + "px";
+    tip.classList.add("show");
+  }
+  function hoverAt() {
+    if (!pointer || dragging || root.classList.contains("stack")) { showTip(-1); return; }
+    const hit = document.elementFromPoint(pointer[0], pointer[1]);
+    const bay = hit && hit.closest && hit.closest(".bay3d");
+    showTip(bay ? bays.indexOf(bay) : -1);
+  }
+  root.addEventListener("pointermove", (e) => { if (e.pointerType === "mouse") { pointer = [e.clientX, e.clientY]; hoverAt(); } });
+  root.addEventListener("pointerleave", () => { pointer = null; showTip(-1); });
 
   // ---------- Stacked floors ----------
   const ghostEls = {};
@@ -368,7 +381,7 @@
   const stackBtn = $("#gStack");
   stackBtn.addEventListener("click", () => {
     const on = root.classList.toggle("stack");
-    if (on) { savedRx = rx; rx = 70; } else rx = savedRx;
+    if (on) { savedRx = rx; rx = 66; } else rx = savedRx;
     apply(sway);
     if (on) { const t0 = performance.now(); (function follow(t) { placeLabels(); if (t - t0 < 1000) requestAnimationFrame(follow); })(t0); }
     stackBtn.classList.toggle("on", on);
@@ -376,25 +389,46 @@
   });
 
   // ---------- Camera: drag to rotate, idle sway ----------
-  let savedRx = 58, rx = 58, rz = -32, dragging = false, sx = 0, sy = 0, lastInput = 0;
+  // Rotation is limited to the range where the walls stay behind the floor and
+  // the painted text reads the right way round; past that the scene breaks up.
+  const RZ_MIN = -62, RZ_MAX = 14, RX_MIN = 42, RX_MAX = 68, HOME_RX = 58, HOME_RZ = -32;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  // Rubber-band resistance as the view approaches a limit.
+  const soft = (v, d, a, b) => {
+    const room = d > 0 ? b - v : v - a;
+    return clamp(v + d * Math.min(1, Math.max(0, room) / 12 + 0.08), a, b);
+  };
+  let savedRx = HOME_RX, rx = HOME_RX, rz = HOME_RZ, dragging = false, sx = 0, sy = 0, lastInput = 0;
   root.addEventListener("pointerdown", (e) => {
-    if (e.target.closest(".ghost, .glabel")) return;
+    if (e.button > 0 || e.target.closest(".ghost, .glabel, .g-reset")) return;
+    rz = clamp(rz + sway, RZ_MIN, RZ_MAX); sway = 0;
     dragging = true; sx = e.clientX; sy = e.clientY;
     root.classList.add("dragging");
-    root.setPointerCapture(e.pointerId);
-    tip.classList.remove("show");
+    try { root.setPointerCapture(e.pointerId); } catch (_) {}
+    showTip(-1);
   });
   root.addEventListener("pointermove", (e) => {
     if (!dragging) return;
-    rz += (e.clientX - sx) * 0.35;
-    rx = Math.max(30, Math.min(74, rx - (e.clientY - sy) * 0.25));
+    rz = soft(rz, (e.clientX - sx) * 0.3, RZ_MIN, RZ_MAX);
+    if (!root.classList.contains("stack")) rx = soft(rx, -(e.clientY - sy) * 0.2, RX_MIN, RX_MAX);
     sx = e.clientX; sy = e.clientY;
     lastInput = performance.now();
     apply(0);
   });
-  const stopDrag = () => { dragging = false; root.classList.remove("dragging"); lastInput = performance.now(); };
+  const stopDrag = () => { if (!dragging) return; dragging = false; root.classList.remove("dragging"); lastInput = performance.now(); };
   root.addEventListener("pointerup", stopDrag);
   root.addEventListener("pointercancel", stopDrag);
+  root.addEventListener("lostpointercapture", stopDrag);
+  function resetView() {
+    rz = HOME_RZ; rx = root.classList.contains("stack") ? 66 : HOME_RX; sway = 0; lastInput = performance.now();
+    scale.classList.add("easing");
+    apply(0);
+    setTimeout(() => scale.classList.remove("easing"), 700);
+  }
+  root.addEventListener("dblclick", resetView);
+  const resetBtn = el("button", "g-reset", root, "Reset view");
+  resetBtn.type = "button";
+  resetBtn.addEventListener("click", resetView);
 
   let sway = 0;
   function apply(sw) {
@@ -416,8 +450,10 @@
     raf = 0;
     if (!visible) return;
     if (!dragging && t - lastInput > 2500) {
-      sway += (Math.sin(t / 4200) * 6 - sway) * 0.05;
+      const target = clamp(rz + Math.sin(t / 4200) * 6, RZ_MIN, RZ_MAX) - rz;
+      sway += (target - sway) * 0.05;
       apply(sway);
+      if (pointer && ((t / 16) | 0) % 8 === 0) hoverAt();
     }
     raf = requestAnimationFrame(loop);
   }

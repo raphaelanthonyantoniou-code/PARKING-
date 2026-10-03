@@ -71,11 +71,17 @@ p { margin: 0; }
 
 /* ---------- Logo ---------- */
 .logo { display: flex; align-items: center; gap: 12px; }
-.logo-img { width: 42px; height: 42px; border-radius: 12px; filter: drop-shadow(0 6px 18px rgba(246,183,11,.35)); transition: transform .4s cubic-bezier(.2,.8,.2,1); }
-.logo:hover .logo-img { transform: rotate(-8deg) scale(1.06); }
-.logo-img.xs { width: 22px; height: 22px; border-radius: 6px; filter: none; }
+.logo-img { height: 42px; width: auto; filter: drop-shadow(0 6px 14px rgba(0,0,0,.6)); transition: transform .4s cubic-bezier(.2,.8,.2,1); }
+.logo:hover .logo-img { transform: translateY(-2px) scale(1.05); }
+.logo-img.xs { height: 20px; filter: none; }
 .logo-text { font: 600 17px/1.05 var(--display); letter-spacing: .06em; color: var(--muted); }
-.logo-text b { color: var(--text); font-weight: 800; }
+.logo-text b.chrome { font-size: 21px; font-weight: 300; display: block; }
+/* Chrome wordmark, after the Parkareto logo */
+.chrome { font-family: "Montserrat", var(--body); font-weight: 300; letter-spacing: .14em;
+  background: linear-gradient(180deg, #ffffff 0%, #c9ced6 28%, #6f7682 50%, #e9ecf1 64%, #9aa1ad 82%, #f4f6f9 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 1px 0 rgba(0,0,0,.6)) drop-shadow(0 0 10px rgba(255,255,255,.08)); }
+
 .logo-text em, .d-brand em { font-style: normal; color: var(--amber); }
 .logo-text small { display: block; font: 500 11.5px var(--body); letter-spacing: .02em; color: var(--muted); margin-top: 4px; }
 
@@ -124,6 +130,7 @@ p { margin: 0; }
 .dots i:nth-child(2) { background: #febc2e; } .dots i:nth-child(3) { background: #28c840; }
 .d-brand { display: flex; align-items: center; gap: 8px; font: 600 12px var(--display); color: var(--muted); letter-spacing: .04em; }
 .d-brand b { color: var(--text); }
+.d-brand b.chrome { font-size: 13px; }
 .d-search { flex: 1; max-width: 360px; margin: 0 auto; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line); color: var(--dim); }
 .d-user { display: flex; align-items: center; gap: 10px; color: var(--muted); font-weight: 600; }
 .avatar { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, var(--amber-2), var(--amber)); }
@@ -426,9 +433,10 @@ details p { color: var(--muted); margin-top: 12px; max-width: 68ch; }
 .loader { position: fixed; inset: 0; z-index: 200; display: none; place-items: center; align-content: center; gap: 18px; background: var(--bg); transition: opacity .6s, visibility .6s; }
 .js .loader { display: grid; }
 .loader.done { opacity: 0; visibility: hidden; pointer-events: none; }
-.loader svg { width: 86px; height: 86px; fill: none; stroke: var(--amber); stroke-width: 7.5; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 18px rgba(246,183,11,.7)); }
-.loader path { stroke-dasharray: 120; stroke-dashoffset: 120; animation: draw 1s cubic-bezier(.6,0,.2,1) forwards; }
-.loader span { font: 800 22px var(--display); letter-spacing: .14em; color: var(--text); opacity: 0; animation: fadeUp .6s .5s forwards; }
+.loader-mark { width: 200px; height: auto; filter: drop-shadow(0 18px 30px rgba(0,0,0,.7)); animation: fadeUp .6s both; }
+.loader-mark .arm-lift { transform-box: view-box; transform-origin: 60px 56px; animation: armLift 1.4s .3s cubic-bezier(.5,0,.2,1) both; }
+@keyframes armLift { 0% { transform: rotate(0); } 45%, 60% { transform: rotate(52deg); } 100% { transform: rotate(0); } }
+.loader span { font-size: 30px; opacity: 0; animation: fadeUp .6s .5s forwards; justify-self: center; }
 .loader em, .rot-word em { font-style: normal; color: var(--amber); }
 @keyframes draw { to { stroke-dashoffset: 0; } }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }

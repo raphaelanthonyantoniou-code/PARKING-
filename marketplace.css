@@ -48,9 +48,15 @@ h1, h2, h3 { line-height: 1.12; margin: 0 0 .5em; text-wrap: balance; }
 .nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 1000; background: rgba(7,11,20,.8); backdrop-filter: blur(16px) saturate(1.4); border-bottom: 1px solid var(--line); }
 .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 72px; }
 .brand { display: flex; align-items: center; gap: 12px; }
-.logo-img { width: 40px; height: 40px; border-radius: 11px; filter: drop-shadow(0 6px 18px rgba(246,183,11,.35)); }
+.logo-img { height: 40px; width: auto; filter: drop-shadow(0 6px 14px rgba(0,0,0,.6)); }
 .brand-t { font: 600 15px/1.05 var(--display); letter-spacing: .04em; color: var(--muted); }
-.brand-t b { color: var(--ink); font-weight: 800; }
+.brand-t b.chrome { font-size: 20px; font-weight: 300; display: block; }
+/* Chrome wordmark, after the Parkareto logo */
+.chrome { font-family: "Montserrat", var(--body); font-weight: 300; letter-spacing: .14em;
+  background: linear-gradient(180deg, #ffffff 0%, #c9ced6 28%, #6f7682 50%, #e9ecf1 64%, #9aa1ad 82%, #f4f6f9 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 1px 0 rgba(0,0,0,.6)) drop-shadow(0 0 10px rgba(255,255,255,.08)); }
+
 .brand-t em { font-style: normal; color: var(--amber); }
 .brand-t small { display: block; font: 500 11.5px var(--body); color: var(--muted); margin-top: 4px; letter-spacing: .02em; }
 .nav-links { display: flex; align-items: center; gap: 24px; font-weight: 600; color: var(--muted); font-size: 15px; }

@@ -9,15 +9,56 @@
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300&family=Unbounded:wght@400;600;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="landing.css">
   <link rel="stylesheet" href="garage.css">
   <script>document.documentElement.classList.add("js")</script>
 </head>
 <body>
   <div class="loader" id="loader" aria-hidden="true">
-    <svg viewBox="0 0 64 64"><path d="M21 49V15h13.5a11.5 11.5 0 0 1 0 23H28"/></svg>
-    <span>PARK<em>ARETO</em></span>
+    <svg class="loader-mark" xmlns="http://www.w3.org/2000/svg" viewBox="2 12 114 68" aria-hidden="true">
+  <defs>
+    <linearGradient id="ld-front" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5a606c"/><stop offset=".35" stop-color="#1b1e25"/><stop offset=".7" stop-color="#0a0b0f"/><stop offset="1" stop-color="#2c3038"/></linearGradient>
+    <linearGradient id="ld-side" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0c0d11"/><stop offset=".6" stop-color="#262a32"/><stop offset="1" stop-color="#4a4f5a"/></linearGradient>
+    <linearGradient id="ld-roof" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8a909c"/><stop offset=".5" stop-color="#2a2e36"/><stop offset="1" stop-color="#555b66"/></linearGradient>
+    <linearGradient id="ld-glass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b3550"/><stop offset=".6" stop-color="#0d0c14"/><stop offset="1" stop-color="#1e1b2a"/></linearGradient>
+    <linearGradient id="ld-edge" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="#9aa1ad"/><stop offset="1" stop-color="#e8ebf0"/></linearGradient>
+    <pattern id="ld-stripe" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="9" height="9" fill="#f6c21a"/><rect width="4.5" height="9" fill="#0b0c10"/></pattern>
+  </defs>
+  <!-- barrier arm -->
+  <g class="arm-lift"><g transform="rotate(-17 58 60)">
+    <rect x="4" y="55" width="58" height="9" rx="1.5" fill="url(#ld-stripe)"/>
+    <rect x="4" y="55" width="58" height="9" rx="1.5" fill="none" stroke="#0b0c10" stroke-width="1"/>
+    <rect x="4" y="55.6" width="58" height="1.6" fill="#fff" opacity=".35"/>
+  </g>
+  </g>
+  <!-- barrier post -->
+  <path d="M50 74h22l4 4H46z" fill="url(#ld-side)" stroke="url(#ld-edge)" stroke-width=".8"/>
+  <rect x="52" y="49" width="16" height="26" rx="2" fill="url(#ld-front)" stroke="url(#ld-edge)" stroke-width=".9"/>
+  <circle cx="60" cy="56" r="3.2" fill="#15171c" stroke="url(#ld-edge)" stroke-width="1"/>
+  <circle cx="60" cy="56" r="1.1" fill="#cfd3da"/>
+  <!-- booth: side face -->
+  <path d="M100 27l10-5v46l-10 6z" fill="url(#ld-side)" stroke="url(#ld-edge)" stroke-width=".9"/>
+  <!-- booth: front face -->
+  <rect x="66" y="27" width="34" height="47" rx="2" fill="url(#ld-front)" stroke="url(#ld-edge)" stroke-width="1"/>
+  <!-- windows -->
+  <rect x="69" y="31" width="13" height="18" rx="1" fill="url(#ld-glass)" stroke="#c9ced6" stroke-width=".6"/>
+  <rect x="84" y="31" width="13" height="18" rx="1" fill="url(#ld-glass)" stroke="#c9ced6" stroke-width=".6"/>
+  <path d="M70 33l6 0-5 9h-1z" fill="#fff" opacity=".18"/>
+  <path d="M101.5 32l7-3.5v16l-7 3.5z" fill="url(#ld-glass)" stroke="#c9ced6" stroke-width=".5"/>
+  <!-- door and vents -->
+  <rect x="88" y="52" width="9" height="20" rx="1" fill="none" stroke="#9aa1ad" stroke-width=".6"/>
+  <g stroke="#9aa1ad" stroke-width=".6"><path d="M70 58h9M70 60.5h9M70 63h9"/><path d="M90 24h6M90 25.6h6"/></g>
+  <path d="M66 51h34" stroke="#c9ced6" stroke-width=".6"/>
+  <!-- roof slab -->
+  <path d="M62 22h40l12-6H74z" fill="url(#ld-roof)" stroke="url(#ld-edge)" stroke-width=".9"/>
+  <path d="M62 22h40v6H62z" fill="url(#ld-front)" stroke="url(#ld-edge)" stroke-width=".9"/>
+  <path d="M102 22l12-6v6l-12 6z" fill="url(#ld-side)" stroke="url(#ld-edge)" stroke-width=".9"/>
+  <path d="M70 20h28l6-3H76z" fill="#0b0c10" opacity=".55"/>
+  <!-- base -->
+  <path d="M64 74h38l8-5v3l-8 5H64z" fill="#0b0c10" stroke="url(#ld-edge)" stroke-width=".7"/>
+</svg>
+    <span class="chrome">PARKARETO</span>
   </div>
   <div class="progress" id="progress" aria-hidden="true"></div>
   <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
@@ -60,8 +101,8 @@
   <header class="nav" id="nav">
     <div class="wrap nav-in">
       <a href="#top" class="logo" aria-label="Parkareto home">
-        <img class="logo-img" src="assets/logo.svg" alt="" width="42" height="42">
-        <span class="logo-text"><b>PARK<em>ARETO</em></b><small>Smart Parking System</small></span>
+        <img class="logo-img" src="assets/logo.svg" alt="" width="70" height="42">
+        <span class="logo-text"><b class="chrome">PARKARETO</b><small>Smart Parking System</small></span>
       </a>
       <nav class="links" id="links">
         <a href="#features">Features</a>
@@ -102,7 +143,7 @@
           <div class="device" id="device">
             <div class="d-top">
               <span class="dots"><i></i><i></i><i></i></span>
-              <span class="d-brand"><img class="logo-img xs" src="assets/logo.svg" alt="" width="22" height="22"><b>PARK<em>ARETO</em></b></span>
+              <span class="d-brand"><img class="logo-img xs" src="assets/logo.svg" alt="" width="34" height="20"><b class="chrome">PARKARETO</b></span>
               <span class="d-search"><svg><use href="#i-search"/></svg> Search plate / ticket</span>
               <span class="d-user"><svg><use href="#i-bell"/></svg><i class="avatar"></i>Admin</span>
             </div>
@@ -433,7 +474,7 @@
       <div class="wrap split rev">
         <div class="receipt-wrap">
           <div class="receipt">
-            <div class="r-head"><img class="logo-img xs" src="assets/logo.svg" alt="" width="22" height="22"><b>PARKARETO</b><small>ΑΠΟΔΕΙΞΗ ΠΑΡΟΧΗΣ ΥΠΗΡΕΣΙΩΝ</small></div>
+            <div class="r-head"><img class="logo-img xs" src="assets/logo.svg" alt="" width="34" height="20"><b>PARKARETO</b><small>ΑΠΟΔΕΙΞΗ ΠΑΡΟΧΗΣ ΥΠΗΡΕΣΙΩΝ</small></div>
             <div class="r-row"><span>Ticket</span><b>#TK-00418</b></div>
             <div class="r-row"><span>Plate</span><b>XHT-6666</b></div>
             <div class="r-row"><span>Entry</span><b>20:55</b></div>
@@ -644,7 +685,7 @@
   <footer class="foot">
     <div class="wrap foot-in">
       <div>
-        <a href="#top" class="logo"><img class="logo-img" src="assets/logo.svg" alt="" width="42" height="42"><span class="logo-text"><b>PARK<em>ARETO</em></b><small>Smart Parking System</small></span></a>
+        <a href="#top" class="logo"><img class="logo-img" src="assets/logo.svg" alt="" width="70" height="42"><span class="logo-text"><b class="chrome">PARKARETO</b><small>Smart Parking System</small></span></a>
         <p>Parking management software for garages and car parks in Greece.</p>
       </div>
       <div><b>Product</b><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="#mydata">myDATA / AADE</a><a href="marketplace.html">Marketplace</a></div>

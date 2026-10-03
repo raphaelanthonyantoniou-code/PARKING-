@@ -21,7 +21,8 @@
   const hideLoader = () => loader && loader.classList.add("done");
   if (reduce) hideLoader();
   else {
-    window.addEventListener("load", () => setTimeout(hideLoader, 700));
+    const t0 = performance.now();
+    window.addEventListener("load", () => setTimeout(hideLoader, Math.max(300, 1900 - (performance.now() - t0))));
     setTimeout(hideLoader, 2600);
   }
 

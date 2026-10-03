@@ -17,7 +17,7 @@ python3 -m http.server 8000
 ```
 
 ## Files
-- `assets/logo.svg`: the Parkareto logo, used in both pages, the favicon and the car grille. Replace this file to change the logo everywhere.
+- `assets/logo.svg`: the Parkareto booth-and-barrier mark (vector redraw of the brand logo), used in both pages, the favicon and the car grille. The intro screen has an inline copy whose barrier lifts. The PARKARETO wordmark is live text in Montserrat with a chrome gradient (`.chrome`).
 - `index.html`, `landing.css`, `landing.js`: landing page
 - `garage.css`, `garage.js`: the Live Parking 3D car park (CSS 3D, no libraries)
 - `marketplace.html`, `marketplace.css`, `marketplace.js`: marketplace
