@@ -1790,6 +1790,40 @@ main, .footer { position: relative; z-index: 3; }
   100% { transform: none; }
 }
 
+/* ---------------------------------------------------------------- match day */
+
+.matchday { position: relative; min-height: 100vh; min-height: 100svh; display: grid; align-items: center; }
+.matchday-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr); gap: 40px; }
+.matchday-panel {
+  display: grid;
+  gap: 18px;
+  justify-items: start;
+  min-width: 0;
+  padding: clamp(24px, 3vw, 36px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  backdrop-filter: blur(14px);
+}
+.matchday-panel > p:not(.eyebrow):not(.matchday-hint) { color: rgba(239, 232, 218, 0.86); max-width: 42ch; }
+.matchday-list { display: grid; gap: 10px; }
+.matchday-list li { display: flex; gap: 12px; color: rgba(239, 232, 218, 0.86); }
+.matchday-list li::before {
+  content: "";
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin-top: 0.5em;
+  border-radius: 50%;
+  background: var(--barbicide);
+  box-shadow: 0 0 8px var(--barbicide);
+}
+.matchday-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.matchday-actions [aria-pressed="true"] { border-color: var(--barbicide); color: #e6fdff; box-shadow: 0 0 16px rgba(69, 207, 217, 0.3); }
+.matchday-hint { font-size: var(--step--1); color: var(--muted); }
+.no-webgl .matchday-hint,
+.no-webgl [data-tv] { display: none; }
+
 /* ---------------------------------------------------------------- after hours switch */
 
 .neon-switch {
@@ -2197,6 +2231,9 @@ main, .footer { position: relative; z-index: 3; }
 }
 @media (max-width: 960px) {
   .nav-switch { display: none; }
+  .matchday-layout { grid-template-columns: minmax(0, 1fr); }
+  .matchday-space { display: none; }
+  .matchday { align-items: end; }
   .shelf-layout { grid-template-columns: minmax(0, 1fr); }
   .shelf-space { display: none; }
   .club-grid { grid-template-columns: minmax(0, 1fr); max-width: 560px; }

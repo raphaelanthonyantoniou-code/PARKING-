@@ -31,9 +31,9 @@ const store = {
 const money = new Intl.NumberFormat(SHOP.locale, { style: 'currency', currency: SHOP.currency, maximumFractionDigits: 0 });
 
 // Scene darkness behind each section, so text stays readable.
-const DIM = { hero: 0, slogan: 0.12, story: 0.18, services: 0.62, fadelab: 0.15, craft: 0, team: 0.6, cutbook: 0.55, shelf: 0.2, lounge: 0.1, club: 0.6, words: 0.5, book: 0.74, visit: 0.38, footer: 0.6 };
+const DIM = { hero: 0, slogan: 0.12, story: 0.18, services: 0.62, fadelab: 0.15, craft: 0, team: 0.6, cutbook: 0.55, shelf: 0.2, lounge: 0.1, matchday: 0.1, club: 0.6, words: 0.5, book: 0.74, visit: 0.38, footer: 0.6 };
 // On tall phone screens text covers more of the scene.
-const DIM_PORTRAIT = { ...DIM, slogan: 0.35, story: 0.45, fadelab: 0.5, shelf: 0.62, lounge: 0.35, words: 0.6, visit: 0.5 };
+const DIM_PORTRAIT = { ...DIM, slogan: 0.35, story: 0.45, fadelab: 0.5, shelf: 0.62, lounge: 0.35, matchday: 0.35, words: 0.6, visit: 0.5 };
 const portrait = matchMedia('(max-aspect-ratio: 9 / 10)');
 
 let stage = null;
@@ -490,6 +490,41 @@ function initFooterNeon() {
 // ======================================================================
 // Pool table controls
 // ======================================================================
+
+// The TV's input: football or the console.
+function syncTvButton() {
+  const onConsole = stage?.tv.input() === 'console';
+  $$('[data-tv]').forEach((b) => {
+    b.setAttribute('aria-pressed', String(onConsole));
+    b.textContent = onConsole ? 'Back to the football' : 'Switch to the PS5';
+  });
+}
+
+function toggleTv() {
+  if (!stage?.tv.ready()) {
+    toast('The TV needs 3D graphics, which this device has turned off.');
+    return;
+  }
+  stage.tv.toggle();
+  syncTvButton();
+}
+
+function initTv() {
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-tv]')) toggleTv();
+  });
+  const section = $('#match-day');
+  const inView = () => {
+    const r = section.getBoundingClientRect();
+    return r.top < innerHeight * 0.5 && r.bottom > innerHeight * 0.5;
+  };
+  // Tap the TV itself to switch.
+  document.addEventListener('click', (e) => {
+    if (!stage?.tv.ready() || !inView()) return;
+    if (e.target.closest('a, button, input, textarea, label, summary, .menu, .nav, [data-no-shoot]')) return;
+    if (stage.tv.hits(e.clientX, e.clientY)) toggleTv();
+  });
+}
 
 function initPool() {
   document.addEventListener('click', (e) => {
@@ -1422,6 +1457,7 @@ async function boot() {
   initFooterNeon();
   initSlogan();
   initPool();
+  initTv();
   const ringTick = initRing();
   const tapeTicks = initTape();
   await loadOptional('./fx.js', (m) => m.initFx({ reduced, finePointer, toast }));

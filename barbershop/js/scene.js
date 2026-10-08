@@ -45,6 +45,7 @@ export const VIEWS = {
   book: { pos: [0.1, 4.6, 2.3], focus: [0, 0.55, 0.15], shift: [0, 0], mshift: [0, 0], mdist: 1.3, orbitR: 1.3, orbitY: 1.05, show: 0 },
   fadelab: { pos: [1.9, 1.3, 1.7], focus: [0, 1.05, 0], shift: [-0.32, 0], mshift: [0, 0.3], mdist: 1.4, orbitR: 1.1, orbitY: 2.9, show: 0 },
   cutbook: { pos: [3.0, 1.6, 3.4], focus: [3.0, 1.5, -2.1], shift: [0, 0], mshift: [0, 0], mdist: 1.2, orbitR: 1.2, orbitY: 1.3, show: 0 },
+  matchday: { pos: [-9.7, 1.5, 2.4], focus: [-10.5, 1.45, -1.9], shift: [-0.32, 0], mshift: [0, 0.32], mdist: 1.4, orbitR: 1.1, orbitY: 1.2, show: 0 },
   lounge: { pos: [11.0, 2.5, 3.4], focus: [11.0, 0.75, 0.2], shift: [0, -0.05], mshift: [0, -0.2], mdist: 1.5, orbitR: 1.1, orbitY: 1.2, show: 0 },
   visit: { pos: [-3.3, 1.65, 1.0], focus: [-4.6, 1.85, -2.1], shift: [0.3, 0], mshift: [0, 0.3], mdist: 1.25, orbitR: 0.85, orbitY: 1.15, show: 0 },
   footer: { pos: [1.5, 1.9, 9.5], focus: [1.5, 1.4, -1.5], shift: [0, 0], mshift: [0, 0], mdist: 1.5, orbitR: 1.2, orbitY: 1.2, show: 0 },
@@ -235,6 +236,7 @@ export async function createStage(canvas, opts = {}) {
     ['pool', () => import('./pool.js'), 'createPool'],
     ['lounge', () => import('./lounge.js'), 'createLounge'],
     ['props', () => import('./props.js'), 'createProps'],
+    ['tv', () => import('./tv.js'), 'createTV'],
   ];
   for (const [key, load, fn] of modules) {
     try {
@@ -665,6 +667,13 @@ export async function createStage(canvas, opts = {}) {
         return true;
       },
     },
+    // The TV corner, when its module loaded.
+    tv: {
+      ready: () => !!extras.tv,
+      input: () => extras.tv?.input?.() || 'match',
+      toggle: () => extras.tv?.setInput?.(extras.tv.input() === 'match' ? 'console' : 'match'),
+      hits: (x, y) => !!extras.tv?.pickables?.length && rayFrom(x, y).intersectObjects(extras.tv.pickables, true).length > 0,
+    },
     setAfterHours(on) {
       state.afterHours = on ? 1 : 0;
     },
@@ -885,27 +894,51 @@ function swirlTexture() {
   return t;
 }
 
-// A puffy candy disc lying in the xz plane: a lathe from the centre of one
-// face, round the edge, to the centre of the other.
-function candyDisc(r, t) {
-  const e = t / 2;
-  const pts = [new THREE.Vector2(0, e)];
-  for (let i = 0; i <= 6; i++) pts.push(new THREE.Vector2(r * 0.55 + (r * 0.4 * i) / 6, e * (1 - 0.06 * (i / 6))));
-  for (let i = 0; i <= 12; i++) {
-    const a = Math.PI / 2 - (Math.PI * i) / 12;
-    pts.push(new THREE.Vector2(r * 0.95 + Math.cos(a) * r * 0.05, Math.sin(a) * e));
+// Cellophane peeled down around the lower half of a ball lollipop and
+// twisted at the stick. Lathed, then crinkled with a little deterministic
+// noise so it catches the light like real wrapping.
+function wrapperGeometry(R) {
+  const prof = [
+    [0.08, -1.34], [0.11, -1.2], [0.22, -1.08], [0.52, -0.9], [0.76, -0.7], [0.91, -0.48], [0.975, -0.28], [0.985, -0.18],
+  ].map(([r, y]) => new THREE.Vector2(r * R, y * R));
+  const geo = new THREE.LatheGeometry(prof, 72);
+  const pos = geo.attributes.position;
+  const v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    const a = Math.atan2(v.z, v.x);
+    const h = v.y / R;
+    const crinkle = 1 + 0.05 * Math.sin(a * 13 + h * 9) + 0.03 * Math.sin(a * 29 - h * 17);
+    // A ragged top edge.
+    const top = h > -0.3 ? (Math.sin(a * 7) * 0.5 + Math.sin(a * 19) * 0.5) * 0.07 * R : 0;
+    v.x *= crinkle;
+    v.z *= crinkle;
+    v.y += top;
+    pos.setXYZ(i, v.x, v.y, v.z);
   }
-  for (let i = 6; i >= 0; i--) pts.push(new THREE.Vector2(r * 0.55 + (r * 0.4 * i) / 6, -e * (1 - 0.06 * (i / 6))));
-  pts.push(new THREE.Vector2(0, -e));
-  return new THREE.LatheGeometry(pts, 96);
+  geo.computeVertexNormals();
+  return geo;
 }
 
 function buildLollipop(M) {
   const candy = new THREE.MeshPhysicalMaterial({
     map: swirlTexture(),
-    roughness: 0.2,
+    roughness: 0.14,
     clearcoat: 1,
-    clearcoatRoughness: 0.04,
+    clearcoatRoughness: 0.03,
+    sheen: 0.4,
+    sheenColor: new THREE.Color(0xffe2ea),
+  });
+  const cellophane = new THREE.MeshPhysicalMaterial({
+    color: 0xffffff,
+    roughness: 0.12,
+    transparent: true,
+    opacity: 0.32,
+    iridescence: 1,
+    iridescenceIOR: 1.35,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+    envMapIntensity: 1.6,
   });
   const satin = new THREE.MeshPhysicalMaterial({ color: 0xff4f9a, roughness: 0.35, sheen: 1, sheenColor: new THREE.Color(0xffc2dc) });
 
@@ -917,38 +950,45 @@ function buildLollipop(M) {
   base.add(mesh(new THREE.CylinderGeometry(0.165, 0.165, 0.01, 40), M.rubber, 0, 0.2, 0));
   group.add(bake(base));
 
-  // Everything above the pot turns.
+  // Everything above the pot turns: a ball of barber-striped candy on a
+  // paper stick, half out of its wrapper.
+  const R = 0.27;
+  const cy = 1.55;
   const spin = new THREE.Group();
   group.add(spin);
   spin.add(mesh(new THREE.CylinderGeometry(0.016, 0.016, 1.12, 16), M.ivory, 0, 0.76, 0));
-  const disc = mesh(candyDisc(0.3, 0.085), candy, 0, 1.58, 0);
-  disc.rotation.x = Math.PI / 2;
-  spin.add(disc);
-
-  // A satin bow where the stick meets the candy.
+  spin.add(mesh(new THREE.SphereGeometry(R, 96, 64), candy, 0, cy, 0));
+  const wrap = new THREE.Mesh(wrapperGeometry(R), cellophane);
+  wrap.position.y = cy;
+  wrap.renderOrder = 2;
+  spin.add(wrap);
+  // Twist of cellophane and a satin bow at the gather.
+  const twist = mesh(new THREE.TorusGeometry(0.03, 0.012, 10, 24), cellophane, 0, cy - R * 1.28, 0);
+  twist.rotation.x = Math.PI / 2;
+  spin.add(twist);
   const bow = new THREE.Group();
-  bow.position.set(0, 1.26, 0.02);
+  bow.position.set(0, cy - R * 1.27, 0.03);
   for (const s of [-1, 1]) {
-    const loop = mesh(new THREE.TorusGeometry(0.045, 0.012, 10, 28), satin, s * 0.05, 0.005, 0);
+    const loop = mesh(new THREE.TorusGeometry(0.036, 0.01, 10, 28), satin, s * 0.04, 0.004, 0);
     loop.scale.set(1, 0.6, 0.5);
     loop.rotation.z = s * 0.35;
     bow.add(loop);
-    const tail = mesh(new THREE.BoxGeometry(0.024, 0.11, 0.006), satin, s * 0.03, -0.06, 0.004);
+    const tail = mesh(new THREE.BoxGeometry(0.02, 0.09, 0.005), satin, s * 0.025, -0.05, 0.004);
     tail.rotation.z = s * 0.4;
     bow.add(tail);
   }
-  bow.add(mesh(new THREE.SphereGeometry(0.018, 16, 12), satin));
+  bow.add(mesh(new THREE.SphereGeometry(0.015, 16, 12), satin));
   spin.add(bow);
 
   return { group, spin, candy };
 }
 
-// A glass jar of small lollipops for the counter.
+// A glass jar of small ball lollipops for the counter.
 function buildLollipopJar(M, candy) {
   const g = new THREE.Group();
   g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.07, 0.17, 40, 1, true), M.glass).translateY(0.085));
   g.add(mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.008, 40), M.glass, 0, 0.004, 0));
-  const disc = candyDisc(0.026, 0.012);
+  const ball = new THREE.SphereGeometry(0.022, 28, 20);
   const r = rng(23);
   for (let i = 0; i < 9; i++) {
     const a = (i / 9) * TAU + r() * 0.4;
@@ -961,9 +1001,9 @@ function buildLollipopJar(M, candy) {
     stick.position.set(x * 0.4, 0.01, z * 0.4);
     stick.rotation.set(Math.sin(a) * tilt, 0, -Math.cos(a) * tilt);
     stick.add(mesh(new THREE.CylinderGeometry(0.0035, 0.0035, h, 8), M.ivory, 0, h / 2, 0));
-    const d = mesh(disc, candy, 0, h + 0.022, 0);
-    d.rotation.set(Math.PI / 2, r() * TAU, 0);
-    stick.add(d);
+    const b = mesh(ball, candy, 0, h + 0.018, 0);
+    b.rotation.set(r() * TAU, r() * TAU, 0);
+    stick.add(b);
     g.add(stick);
   }
   return g;
