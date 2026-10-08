@@ -31,9 +31,9 @@ const store = {
 const money = new Intl.NumberFormat(SHOP.locale, { style: 'currency', currency: SHOP.currency, maximumFractionDigits: 0 });
 
 // Scene darkness behind each section, so text stays readable.
-const DIM = { hero: 0, slogan: 0.12, story: 0.18, services: 0.62, fadelab: 0.15, craft: 0, team: 0.6, cutbook: 0.55, shelf: 0.2, lounge: 0.1, matchday: 0.1, club: 0.6, words: 0.5, book: 0.74, visit: 0.38, footer: 0.6 };
+const DIM = { hero: 0, slogan: 0.12, story: 0.18, services: 0.62, fadelab: 0.72, craft: 0, team: 0.6, cutbook: 0.55, shelf: 0.2, lounge: 0.1, matchday: 0.1, club: 0.6, words: 0.5, book: 0.74, visit: 0.38, footer: 0.6 };
 // On tall phone screens text covers more of the scene.
-const DIM_PORTRAIT = { ...DIM, slogan: 0.35, story: 0.45, fadelab: 0.5, shelf: 0.62, lounge: 0.35, matchday: 0.35, words: 0.6, visit: 0.5 };
+const DIM_PORTRAIT = { ...DIM, slogan: 0.35, story: 0.45, fadelab: 0.78, shelf: 0.62, lounge: 0.35, matchday: 0.35, words: 0.6, visit: 0.5 };
 const portrait = matchMedia('(max-aspect-ratio: 9 / 10)');
 
 let stage = null;
