@@ -1,8 +1,8 @@
 // Lounge, reception and waiting area, and ceiling fans.
 //
-// Lounge, right of the chairs (x 8–14.5): a Chesterfield sofa, a floor lamp,
-// a bar cart with whisky, framed posters and a jukebox whose arch and bubble
-// tubes cycle colour while a record turns behind the glass.
+// Lounge, right of the chairs (x 8.6–14.5): a Chesterfield sofa between two
+// brass sconces, a bar cart with whisky, framed posters and a jukebox whose
+// arch and bubble tubes cycle colour while a record turns behind the glass.
 // Reception, left of the chairs (x -9 to -5.3): a fluted walnut desk with a
 // brass cash register that rings up a sale now and then, a bell, a banker's
 // lamp and the appointment book; club chairs, a coffee table and a rug; a
@@ -13,24 +13,24 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
-import { SERVICES } from './config.js';
+import { SHOP } from './config.js';
 import { mesh, bake, makeCanvas, rng, extrude, archShape, neonLevel, TAU, clamp, lerp, ease } from './kit.js';
 
 // Placements: x, y, z and rotation about y.
-const SOFA = [9.6, 0, -1.76, 0];
-const CART = [11.15, 0, -1.93, 0];
-const FLOOR_LAMP = [8.2, 0, -1.92, 0];
+const SOFA = [9.7, 0, -1.76, 0];
+const CART = [11.3, 0, -1.93, 0];
+const SCONCES = [8.66, 10.74]; // x, either side of the sofa
 const JUKEBOX = [13.98, 0, -1.78, -0.3];
 const DESK = [-6.45, 0, 0.7, 0.55];
 const REGISTER = [-0.36, 1.02, -0.02, 0.1]; // on the desk
-const CLOCK = [-7.2, 2.3, -2.2, 0];
-const PALM = [-5.6, 0, -1.8, 0];
+const CLOCK = [-7.3, 2.3, -2.2, 0];
+const PALM = [-5.6, 0, -1.7, 0];
 const FANS = [[-6.9, -0.4], [1.5, 0.6], [11, 1.5]]; // x, z
 
 // The one extra light (desktop only) follows the camera to whichever area
 // it is looking at, so both get a real key light for the price of one.
 const SPOTS = {
-  reception: { pos: [-6.3, 4.4, 1.9], target: [-7.3, 0.5, -0.9], angle: 0.62, power: 15 },
+  reception: { pos: [-5.5, 4.3, 2.9], target: [-7.2, 0.6, -0.9], angle: 0.58, power: 15 },
   lounge: { pos: [9.9, 4.3, 0.9], target: [10.4, 0.5, -1.9], angle: 0.5, power: 13 },
 };
 
@@ -47,12 +47,15 @@ export async function createLounge(ctx) {
 
   // ------------------------------------------------------------ lounge
   const lounge = new THREE.Group();
-  lounge.add(place(buildSofa(M), SOFA), place(buildBarCart(M), CART), place(buildFloorLamp(M, L), FLOOR_LAMP));
-  warm.push({ p: [8.2, 0.004, -1.55], s: [1.7, 1.5], up: true }, { p: [8.2, 2.05, -2.196], s: [1.1, 1.3] });
+  lounge.add(place(buildSofa(M), SOFA), place(buildBarCart(M, L), CART));
+  for (const x of SCONCES) {
+    lounge.add(place(buildSconce(M, L), [x, 1.62, -2.2, 0]));
+    warm.push({ p: [x, 2.0, -2.196], s: [0.75, 1.0] }, { p: [x, 1.45, -2.196], s: [0.45, 0.5] });
+  }
   for (const [rect, x, y, w, h, frame] of [
-    [ART.eight, 9.1, 1.84, 0.5, 0.694, M.ebony],
-    [ART.shave, 10.1, 1.84, 0.5, 0.694, M.brass],
-    [ART.rules, 11.15, 1.78, 0.32, 0.427, M.brass],
+    [ART.eight, 9.2, 1.84, 0.5, 0.694, M.ebony],
+    [ART.shave, 10.2, 1.84, 0.5, 0.694, M.brass],
+    [ART.rules, 11.3, 1.78, 0.32, 0.427, M.brass],
     [ART.rhythm, 13.95, 2.04, 0.42, 0.583, M.ebony],
   ]) {
     lounge.add(buildPoster(M, L, rect, x, y, w, h, frame));
@@ -86,8 +89,8 @@ export async function createLounge(ctx) {
   reception.add(place(buildCoatStand(M, L), [-8.7, 0, 0.3, 0.4]), place(palm.pot, PALM));
   root.add(place(palm.leaves, PALM));
   for (const [rect, x, y, w, h, frame] of [
-    [ART.tonic, -8.65, 1.86, 0.5, 0.694, M.woodDark],
-    [ART.prices, -6.15, 1.84, 0.46, 0.638, M.brass],
+    [ART.tonic, -8.65, 1.86, 0.5, 0.694, L.lacquer],
+    [ART.hours, -6.5, 1.84, 0.46, 0.638, M.brass],
   ]) {
     reception.add(buildPoster(M, L, rect, x, y, w, h, frame));
     warm.push({ p: [x, y + h / 2 + 0.05, -2.196], s: [w * 2.1, h * 1.2] });
@@ -139,22 +142,28 @@ export async function createLounge(ctx) {
     const fixture = P * (1 - 0.45 * env.afterHours);
     L.print.emissiveIntensity = 0.62 * fixture;
     L.glow.color.setRGB(4.2, 2.5, 1.2).multiplyScalar(fixture);
-    L.frosted.emissiveIntensity = 1.5 * fixture;
+    L.frosted.emissiveIntensity = 1.05 * fixture;
     L.bankers.emissiveIntensity = 1.6 * P;
     L.pool.color.setScalar(0.55 * fixture);
 
-    // The jukebox flickers on after the neon, then cycles its colours.
-    const level = neonLevel(env.since === null ? null : env.since - 2.1, P, env.reduced) * env.glow;
+    // The jukebox flickers on after the neon, then cycles its colours. It
+    // takes only part of the after-hours boost so its colours don't wash out.
+    const level = neonLevel(env.since === null ? null : env.since - 2.1, P, env.reduced) * lerp(1, env.glow, 0.6);
     const u = L.jukeUniforms;
     u.uLevel.value = level;
     if (move) u.uTime.value += dt;
-    L.chamber.color.setRGB(1.6, 0.95, 0.55).multiplyScalar(level);
-    L.jukePool.color.copy(jukeColor(0.3 - u.uTime.value * 0.07, tint)).multiplyScalar(0.5 * level);
+    L.chamber.color.setRGB(2.2, 1.3, 0.7).multiplyScalar(level);
+    L.jukePool.color.copy(jukeColor(0.3 - u.uTime.value * 0.07, tint)).multiplyScalar(0.4 * level);
     L.vinyl.emissiveIntensity = 0.5 * level;
     spin = lerp(spin, move && level > 0.5 ? 3.5 : 0, 1 - Math.exp(-dt * 1.2));
     jukebox.record.rotation.y -= spin * dt;
 
-    if (move) for (const r of rotors) r.rotation.y += dt * 1.9;
+    if (move) {
+      for (const r of rotors) r.rotation.y += dt * 1.9;
+      // The palm stirs in the draught from the fan above it.
+      palm.leaves.rotation.x = 0.012 * Math.sin(time * 1.3);
+      palm.leaves.rotation.z = 0.009 * Math.sin(time * 0.9 + 1);
+    }
     updateClock(clock, Date.now() - tz, env.reduced);
     updateRegister(register, time, env.reduced);
     if (spot) aimSpot(spot, env);
@@ -289,10 +298,23 @@ function makeMaterials(M, art) {
       polygonOffsetFactor: -1,
       polygonOffsetUnits: -4,
     });
+  // Older, softer brass than the fittings, so the big surfaces don't mirror
+  // the spot straight back.
   const brassWork = M.brass.clone();
+  brassWork.color.set(0xb48c4c);
+  brassWork.roughness = 0.42;
   brassWork.bumpMap = art.chased;
-  brassWork.bumpScale = 1.2;
+  brassWork.bumpScale = 0.7;
   return {
+    // French-polished walnut: glossy enough that fluting and edges catch
+    // highlights in a dim room.
+    lacquer: new THREE.MeshPhysicalMaterial({
+      map: M.woodDark.map,
+      color: 0xd8c2ac,
+      roughness: 0.38,
+      clearcoat: 0.9,
+      clearcoatRoughness: 0.12,
+    }),
     // Posters, rug, clock face… lit from the emissive copy of the atlas,
     // which bakes in the fall-off of each picture light.
     print: new THREE.MeshStandardMaterial({
@@ -304,7 +326,7 @@ function makeMaterials(M, art) {
       side: THREE.DoubleSide,
     }),
     glow: new THREE.MeshBasicMaterial({ color: 0x000000 }),
-    frosted: new THREE.MeshStandardMaterial({ color: 0xe9dcc3, emissive: 0xffbf80, emissiveIntensity: 0, roughness: 0.45 }),
+    frosted: new THREE.MeshStandardMaterial({ color: 0xe9dcc3, emissive: 0xffbf80, emissiveIntensity: 0, roughness: 0.45, side: THREE.DoubleSide }),
     bankers: new THREE.MeshPhysicalMaterial({
       color: 0x0a3a1d,
       emissive: 0x1f9c48,
@@ -322,6 +344,7 @@ function makeMaterials(M, art) {
     jukeUniforms,
     band: jukeMaterial(jukeUniforms, BAND_FRAG),
     bubbles: jukeMaterial(jukeUniforms, BUBBLE_FRAG),
+    panel: jukeMaterial(jukeUniforms, PANEL_FRAG),
     pool: pool(),
     jukePool: pool(),
   };
@@ -360,7 +383,7 @@ const BAND_FRAG = /* glsl */ `
   void main() {
     vec3 col = palette(vUv.x * 1.3 - uTime * 0.07);
     float f = facing();
-    col *= (0.35 + 0.9 * f * f) * uLevel * 2.6;
+    col *= (0.3 + 0.8 * f * f) * uLevel * 1.45;
     gl_FragColor = vec4(col, 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
@@ -371,14 +394,24 @@ const BUBBLE_FRAG = /* glsl */ `
   float hash(float n) { return fract(sin(n * 12.9898) * 43758.5453); }
   void main() {
     float s = 0.5 - abs(vUv.x - 0.5);
-    float cell = s * 80.0 - uTime * 1.4;
+    float cell = s * 60.0 - uTime * 1.2;
     float id = floor(cell);
-    float size = 0.16 + 0.2 * hash(id);
-    float bubble = step(0.4, hash(id + 7.0)) * smoothstep(size, size * 0.45, abs(fract(cell) - 0.5));
+    float size = 0.12 + 0.26 * hash(id);
+    float bubble = step(0.62, hash(id + 7.0)) * smoothstep(size, size * 0.45, abs(fract(cell) - 0.5));
     vec3 liquid = palette(0.05 + s * 0.6 - uTime * 0.03) * 0.8;
     vec3 col = mix(liquid, vec3(1.7, 1.5, 1.2), bubble);
-    col *= (0.45 + 0.8 * facing()) * uLevel * 1.7;
+    col *= (0.45 + 0.8 * facing()) * uLevel * 1.25;
     gl_FragColor = vec4(col, 1.0);
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
+  }`;
+
+// Backlit grille plastic: colour drifts upwards, brighter in the middle.
+const PANEL_FRAG = /* glsl */ `
+  void main() {
+    vec3 col = palette(vUv.y * 0.35 + vUv.x * 0.1 - uTime * 0.07 + 0.4);
+    float glow = 1.0 - 0.7 * length(vUv - 0.5);
+    gl_FragColor = vec4(col * glow * uLevel * 0.85, 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
   }`;
@@ -410,7 +443,7 @@ const ART = {
   shave: [520, 8, 496, 688],
   rhythm: [1032, 8, 496, 688],
   tonic: [1544, 8, 496, 688],
-  prices: [8, 712, 496, 688],
+  hours: [8, 712, 496, 688],
   clock: [520, 712, 496, 496],
   rug: [1032, 712, 1008, 640],
   mag0: [520, 1224, 236, 316],
@@ -423,6 +456,7 @@ const ART = {
   amount: [1688, 1516, 352, 60],
   tabs: [1688, 1592, 352, 88],
   ring: [1688, 1696, 352, 80],
+  notes: [772, 1556, 236, 120],
 };
 
 const FONT = {
@@ -456,7 +490,7 @@ function paintArt() {
     shave: paintShave,
     rhythm: paintRhythm,
     tonic: paintTonic,
-    prices: paintPrices,
+    hours: paintHours,
     clock: paintClockFace,
     rug: paintRug,
     mag0: (g, w, h) => paintMagazine(g, w, h, 0),
@@ -469,6 +503,7 @@ function paintArt() {
     amount: (g, w, h) => plate(g, w, h, 'AMOUNT PURCHASED', '#16120f', '#d9b56a'),
     tabs: paintTabs,
     ring: (g, w, h) => plate(g, w, h, 'PLEASE RING', '#b98d45', '#1a120c'),
+    notes: paintNotes,
   };
   for (const [name, paint] of Object.entries(painters)) {
     const [x, y, w, h] = ART[name];
@@ -497,7 +532,7 @@ function paintArt() {
     shave: poster,
     rhythm: poster,
     tonic: poster,
-    prices: poster,
+    hours: poster,
     rules: poster,
     clock: () => 'rgb(96,90,80)',
     titles: () => 'rgb(255,236,200)',
@@ -875,8 +910,11 @@ function paintTonic(g, w, h, r) {
   age(g, w, h, r);
 }
 
-function paintPrices(g, w, h, r) {
+// Opening hours from the shop config, Monday first, today picked out.
+function paintHours(g, w, h, r) {
   const gold = '#d6ae62';
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const today = new Date().getDay();
   g.fillStyle = '#121110';
   g.fillRect(0, 0, w, h);
   for (let i = 0; i < 2600; i++) {
@@ -884,25 +922,30 @@ function paintPrices(g, w, h, r) {
     g.fillRect(r() * w, r() * h, 2, 2);
   }
   keyline(g, w, h, gold);
-  text(g, 'PRICE LIST', w / 2, 82, `800 64px ${FONT.display}`, gold, 10);
+  text(g, 'OPENING HOURS', w / 2, 82, `800 54px ${FONT.display}`, gold, 6, w - 70);
   text(g, 'Barbershop · Athens', w / 2, 128, `italic 400 22px ${FONT.serif}`, '#e9dcc0');
   rule(g, 60, 154, w - 120, gold, 2);
-  SERVICES.slice(0, 8).forEach((s, i) => {
-    const y = 196 + i * 56;
+  [1, 2, 3, 4, 5, 6, 0].forEach((d, i) => {
+    const y = 204 + i * 58;
+    const open = SHOP.hours[d];
+    const hours = open ? `${open[0]} – ${open[1]}` : 'Closed';
+    if (d === today) {
+      g.fillStyle = 'rgba(214,174,98,0.16)';
+      g.fillRect(34, y - 24, w - 68, 48);
+    }
     g.font = `600 25px ${FONT.sans}`;
-    g.fillStyle = '#efe5cf';
+    g.fillStyle = d === today ? gold : '#efe5cf';
     g.textAlign = 'left';
     g.textBaseline = 'middle';
-    g.fillText(s.name, 44, y);
-    const nameW = g.measureText(s.name).width;
-    g.font = `700 30px ${FONT.display}`;
-    g.fillStyle = gold;
+    g.fillText(days[d], 48, y);
+    const dayW = g.measureText(days[d]).width;
+    g.font = `700 28px ${FONT.display}`;
+    g.fillStyle = open ? gold : '#9a8f7c';
     g.textAlign = 'right';
-    const price = `€${s.price}`;
-    g.fillText(price, w - 44, y);
-    const priceW = g.measureText(price).width;
-    g.fillStyle = 'rgba(214,174,98,0.6)';
-    for (let x = 52 + nameW; x < w - 52 - priceW; x += 9) g.fillRect(x, y + 8, 2.5, 2.5);
+    g.fillText(hours, w - 48, y);
+    const hoursW = g.measureText(hours).width;
+    g.fillStyle = 'rgba(214,174,98,0.5)';
+    for (let x = 58 + dayW; x < w - 58 - hoursW; x += 9) g.fillRect(x, y + 8, 2.5, 2.5);
   });
   text(g, 'Walk-ins welcome · ask at the desk', w / 2, h - 52, `italic 400 22px ${FONT.serif}`, '#e9dcc0');
 }
@@ -1077,7 +1120,6 @@ function paintMagazine(g, w, h, kind) {
   g.fillStyle = bg;
   g.fillRect(0, 0, w, h);
   text(g, title, w / 2, 34, `800 38px ${FONT.display}`, ink, 2, w - 20);
-  g.fillStyle = 'rgba(0,0,0,0.35)';
   if (kind === 0) {
     // A pompadour in profile.
     g.fillStyle = '#16100c';
@@ -1206,12 +1248,26 @@ function plate(g, w, h, label, bg, ink) {
   text(g, label, w / 2, h / 2 + 1, `700 ${Math.round(h * 0.5)}px ${FONT.display}`, ink, 4, w - 24);
 }
 
+// The top banknote of a stack in the till.
+function paintNotes(g, w, h) {
+  g.fillStyle = '#b9c2a4';
+  g.fillRect(0, 0, w, h);
+  g.strokeStyle = '#4f6146';
+  g.lineWidth = 4;
+  g.strokeRect(8, 8, w - 16, h - 16);
+  g.fillStyle = '#d9dcc6';
+  g.beginPath();
+  g.ellipse(w * 0.66, h / 2, 34, 40, 0, 0, TAU);
+  g.fill();
+  text(g, '20', w * 0.25, h / 2, `800 46px ${FONT.display}`, '#3f5238');
+}
+
 function paintTabs(g, w, h) {
   const tw = w / 4;
-  ['€', '2', '5', '0'].forEach((d, i) => {
+  ['€', '2', '5', '.00'].forEach((d, i) => {
     g.fillStyle = '#f4ecdb';
     g.fillRect(i * tw + 4, 4, tw - 8, h - 8);
-    text(g, d, i * tw + tw / 2, h / 2 + 2, `800 62px ${FONT.display}`, i ? '#141010' : '#b8261d');
+    text(g, d, i * tw + tw / 2, h / 2 + 2, `800 ${i === 3 ? 44 : 62}px ${FONT.display}`, i ? '#141010' : '#b8261d');
   });
 }
 
@@ -1279,28 +1335,28 @@ function chasedBrass() {
   g.strokeStyle = '#d8d8d8';
   g.lineWidth = 3;
   g.lineCap = 'round';
-  for (let i = 0; i < 26; i++) {
-    const x = r() * 256;
-    const y = r() * 256;
-    const s = 10 + r() * 18;
-    g.beginPath();
-    g.arc(x, y, s, r() * TAU, r() * TAU + 4);
-    g.stroke();
-    g.beginPath();
-    g.moveTo(x + s, y);
-    g.bezierCurveTo(x + s * 2, y - s, x + s * 2.6, y + s, x + s * 3.4, y);
-    g.stroke();
+  g.lineWidth = 2;
+  // Rows of acanthus scrolls: a spiral, then a leaf curling off it.
+  for (let row = 0; row < 8; row++) {
+    for (let k = 0; k < 6; k++) {
+      const x = k * 44 + (row % 2) * 22 + r() * 6;
+      const y = row * 32 + 16;
+      const s = 7 + r() * 4;
+      const dir = row % 2 ? -1 : 1;
+      g.beginPath();
+      for (let a = 0; a < 9; a += 0.3) g.lineTo(x + Math.cos(a * dir) * s * (1 - a / 11), y + Math.sin(a * dir) * s * (1 - a / 11));
+      g.stroke();
+      g.beginPath();
+      g.moveTo(x + s, y);
+      g.bezierCurveTo(x + s * 1.8, y - s * 1.4, x + s * 2.6, y + s, x + s * 3.2, y - s * 0.4);
+      g.stroke();
+    }
   }
-  g.strokeStyle = '#3a3a3a';
-  g.lineWidth = 1.5;
-  for (let i = 0; i < 40; i++) {
-    g.beginPath();
-    g.arc(r() * 256, r() * 256, 3 + r() * 6, 0, TAU);
-    g.stroke();
-  }
+  g.fillStyle = '#5a5a5a';
+  for (let i = 0; i < 500; i++) g.fillRect(r() * 256, r() * 256, 1.5, 1.5);
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.repeat.set(3, 3);
+  t.repeat.set(4, 4);
   return t;
 }
 
@@ -1346,7 +1402,7 @@ function buildSofa(M) {
   const H = 0.74;
   const foot = 0.08;
   const seat = 0.44;
-  const nail = new THREE.SphereGeometry(0.0065, 8, 6);
+  const nail = new THREE.SphereGeometry(0.0065, 6, 4);
 
   g.add(mesh(new RoundedBoxGeometry(W - 0.04, 0.28, D - 0.04, 4, 0.05), M.leather, 0, foot + 0.15, 0.0));
   const cw = (W - 0.4) / 2;
@@ -1409,8 +1465,10 @@ function tufted(w, h, sx, sy, depth) {
   }
   geo.computeVertexNormals();
   const buttons = [];
-  for (let i = -Math.ceil((2 * w) / sx); i <= (2 * w) / sx; i++) {
-    for (let j = -Math.ceil((2 * h) / sy); j <= (2 * h) / sy; j++) {
+  const ni = Math.ceil(w / sx);
+  const nj = Math.ceil(h / sy);
+  for (let i = -ni; i <= ni; i++) {
+    for (let j = -nj; j <= nj; j++) {
       if ((i + j) % 2) continue;
       const bx = (i * sx) / 2;
       const by = (j * sy) / 2;
@@ -1420,7 +1478,7 @@ function tufted(w, h, sx, sy, depth) {
   return { geo, buttons };
 }
 
-function buildBarCart(M) {
+function buildBarCart(M, L) {
   const g = new THREE.Group();
   const W = 0.72;
   const D = 0.42;
@@ -1429,7 +1487,7 @@ function buildBarCart(M) {
     for (const sz of [-1, 1]) g.add(rod([sx * W / 2, 0.08, sz * D / 2], [sx * W / 2, 0.86, sz * D / 2], 0.011, M.brass));
   }
   for (const y of [0.24, 0.78]) {
-    g.add(mesh(new RoundedBoxGeometry(W - 0.02, 0.022, D - 0.02, 2, 0.006), M.woodDark, 0, y, 0));
+    g.add(mesh(new RoundedBoxGeometry(W - 0.02, 0.022, D - 0.02, 2, 0.006), L.lacquer, 0, y, 0));
     for (const sz of [-1, 1]) g.add(rod([-W / 2, y + 0.012, sz * D / 2], [W / 2, y + 0.012, sz * D / 2], 0.008, M.brass));
   }
   for (const sz of [-1, 1]) g.add(rod([-W / 2, 0.86, sz * D / 2], [W / 2, 0.86, sz * D / 2], 0.008, M.brass));
@@ -1486,20 +1544,15 @@ function buildBarCart(M) {
   return g;
 }
 
-function buildFloorLamp(M, L) {
+// Brass wall sconce: a backplate, a swan-neck arm and a frosted tulip
+// shade lit from inside. Origin on the wall at the backplate.
+function buildSconce(M, L) {
   const g = new THREE.Group();
-  g.add(mesh(lathe([[0, 0], [0.17, 0], [0.17, 0.015], [0.12, 0.04], [0.03, 0.06], [0, 0.06]], 40), M.brass));
-  g.add(rod([0, 0.05, 0], [0, 1.5, 0], 0.012, M.brass));
-  for (const y of [0.6, 1.1]) g.add(mesh(new THREE.SphereGeometry(0.022, 16, 12), M.brass, 0, y, 0));
-  // Drum shade glowing through the fabric, bright where the bulb shows.
-  g.add(mesh(new THREE.CylinderGeometry(0.17, 0.23, 0.3, 40, 1, true), L.frosted, 0, 1.58, 0));
-  g.add(mesh(new THREE.CylinderGeometry(0.168, 0.228, 0.298, 40, 1, true).scale(-1, 1, 1), L.glow, 0, 1.58, 0));
-  for (const [y, rad] of [[1.73, 0.172], [1.43, 0.232]]) {
-    const band = mesh(new THREE.TorusGeometry(rad, 0.005, 6, 48), M.brass, 0, y, 0);
-    band.rotation.x = Math.PI / 2;
-    g.add(band);
-  }
-  g.add(mesh(new THREE.SphereGeometry(0.04, 16, 12), L.glow, 0, 1.52, 0));
+  g.add(mesh(new RoundedBoxGeometry(0.07, 0.16, 0.014, 2, 0.006), M.brass, 0, 0, 0.007));
+  g.add(mesh(tube([[0, -0.03, 0.01], [0, -0.03, 0.07], [0, 0.0, 0.12], [0, 0.07, 0.13]], 0.007, 24, 8), M.brass));
+  g.add(mesh(lathe([[0, 0], [0.02, 0], [0.026, 0.02], [0.018, 0.03], [0, 0.03]], 20), M.brass, 0, 0.065, 0.13));
+  g.add(mesh(lathe([[0.02, 0], [0.034, 0.012], [0.052, 0.05], [0.066, 0.1], [0.072, 0.135]], 28), L.frosted, 0, 0.09, 0.13));
+  g.add(mesh(new THREE.SphereGeometry(0.022, 14, 10), L.glow, 0, 0.13, 0.13));
   return g;
 }
 
@@ -1512,10 +1565,10 @@ function buildJukebox(M, L) {
   const zf = D / 2; // front face
 
   body.add(mesh(new RoundedBoxGeometry(W + 0.03, 0.06, D + 0.03, 2, 0.01), M.blackChrome, 0, 0.03, 0));
-  body.add(mesh(new RoundedBoxGeometry(W, 0.86, D, 4, 0.025), M.woodDark, 0, 0.49, 0));
+  body.add(mesh(new RoundedBoxGeometry(W, 0.86, D, 4, 0.025), L.lacquer, 0, 0.49, 0));
   const upper = domeShape(W, 0.6);
   upper.holes.push(domeShape(0.48, 0.45, 0.05, new THREE.Path()));
-  body.add(mesh(extrude(upper, D, 0.006), M.woodDark, 0, 0.9, 0));
+  body.add(mesh(extrude(upper, D, 0.006), L.lacquer, 0, 0.9, 0));
 
   // The window: a warm chamber behind glass, framed in chrome.
   body.add(mesh(fitUv(new THREE.ShapeGeometry(domeShape(0.48, 0.45, 0.95))), L.chamber, 0, 0, -0.14));
@@ -1523,9 +1576,9 @@ function buildJukebox(M, L) {
   body.add(mesh(tube(archPoints(0.24, 0.95, 1.16, zf + 0.004), 0.01, 120, 8), M.chrome));
   body.add(mesh(new THREE.BoxGeometry(0.5, 0.02, 0.03), M.chrome, 0, 0.95, zf));
   // Records waiting in the carousel behind the turntable.
-  for (let i = 0; i < 9; i++) {
-    const a = (i / 8 - 0.5) * 2.2;
-    const disc = mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.004, 32), M.ebony, Math.sin(a) * 0.15, 1.2, -0.06 - Math.cos(a) * 0.04);
+  for (let i = 0; i < 7; i++) {
+    const a = (i / 6 - 0.5) * 2.0;
+    const disc = mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.004, 32), M.ebony, Math.sin(a) * 0.15, 1.24, -0.08 - Math.cos(a) * 0.03);
     disc.rotation.set(0, 0, Math.PI / 2);
     disc.rotateOnWorldAxis(UP, a);
     body.add(disc);
@@ -1546,7 +1599,7 @@ function buildJukebox(M, L) {
   body.add(sel);
 
   // Speaker grille: backlit plastic behind chrome bars.
-  body.add(mesh(new THREE.PlaneGeometry(0.5, 0.46), L.band, 0, 0.38, zf + 0.002));
+  body.add(mesh(new THREE.PlaneGeometry(0.5, 0.46), L.panel, 0, 0.38, zf + 0.002));
   for (let i = 0; i < 9; i++) body.add(mesh(new THREE.BoxGeometry(0.012, 0.46, 0.012), M.chrome, -0.2 + i * 0.05, 0.38, zf + 0.012));
   for (const y of [0.15, 0.61]) body.add(mesh(new THREE.BoxGeometry(0.52, 0.02, 0.02), M.chrome, 0, y, zf + 0.012));
   const medal = mesh(new THREE.TorusGeometry(0.07, 0.01, 10, 40), M.chrome, 0, 0.38, zf + 0.02);
@@ -1586,20 +1639,20 @@ function buildDesk(M, L) {
   const W = 1.6;
   const D = 0.62;
   const zf = 0.25; // front of the carcass
-  g.add(mesh(new THREE.BoxGeometry(W - 0.06, 0.9, D - 0.08), M.woodDark, 0, 0.51, -0.02));
+  g.add(mesh(new THREE.BoxGeometry(W - 0.06, 0.9, D - 0.08), L.lacquer, 0, 0.51, -0.02));
   const flute = new THREE.CylinderGeometry(0.017, 0.017, 0.74, 12, 1, true, -Math.PI / 2, Math.PI);
-  for (let i = 0; i < 35; i++) g.add(mesh(flute, M.woodDark, -0.68 + i * 0.04, 0.5, zf));
+  for (let i = 0; i < 35; i++) g.add(mesh(flute, L.lacquer, -0.68 + i * 0.04, 0.5, zf));
   g.add(mesh(new THREE.BoxGeometry(W - 0.04, 0.075, 0.03), M.brass, 0, 0.0375, zf + 0.01));
-  g.add(mesh(new THREE.BoxGeometry(W - 0.04, 0.03, 0.04), M.woodDark, 0, 0.09, zf + 0.005));
+  g.add(mesh(new THREE.BoxGeometry(W - 0.04, 0.03, 0.04), L.lacquer, 0, 0.09, zf + 0.005));
   g.add(mesh(new THREE.BoxGeometry(W - 0.12, 0.02, 0.012), M.brass, 0, 0.885, zf + 0.012));
-  g.add(mesh(new RoundedBoxGeometry(W - 0.02, 0.07, D - 0.02, 2, 0.012), M.woodDark, 0, 0.945, -0.005));
+  g.add(mesh(new RoundedBoxGeometry(W - 0.02, 0.07, D - 0.02, 2, 0.012), L.lacquer, 0, 0.945, -0.005));
   g.add(mesh(new RoundedBoxGeometry(W + 0.06, 0.04, D + 0.04, 2, 0.012), M.marble, 0, 1.0, 0));
   for (const s of [-1, 1]) {
     const x = s * (W / 2 - 0.04);
     g.add(mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.78, 20), M.brass, x, 0.5, zf + 0.012));
     for (const y of [0.1, 0.9]) g.add(mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.025, 20), M.brass, x, y, zf + 0.012));
     // Raised side panel with a brass bead.
-    g.add(mesh(new RoundedBoxGeometry(0.02, 0.6, D - 0.24, 2, 0.006), M.woodDark, s * (W / 2 - 0.025), 0.5, -0.02));
+    g.add(mesh(new RoundedBoxGeometry(0.02, 0.6, D - 0.24, 2, 0.006), L.lacquer, s * (W / 2 - 0.025), 0.5, -0.02));
     g.add(mesh(new THREE.BoxGeometry(0.006, 0.62, 0.008), M.brass, s * (W / 2 - 0.013), 0.5, (D - 0.2) / 2 - 0.02));
   }
 
@@ -1687,9 +1740,9 @@ function buildRegister(M, L) {
   const brass = L.brassWork;
 
   // Drawer housing, open at the front.
-  for (const y of [0.006, 0.104]) body.add(mesh(new THREE.BoxGeometry(W, 0.012, D), M.woodDark, 0, y, 0));
-  for (const s of [-1, 1]) body.add(mesh(new THREE.BoxGeometry(0.012, 0.11, D), M.woodDark, s * (W / 2 - 0.006), 0.055, 0));
-  body.add(mesh(new THREE.BoxGeometry(W, 0.11, 0.012), M.woodDark, 0, 0.055, -D / 2 + 0.006));
+  for (const y of [0.006, 0.104]) body.add(mesh(new THREE.BoxGeometry(W, 0.012, D), L.lacquer, 0, y, 0));
+  for (const s of [-1, 1]) body.add(mesh(new THREE.BoxGeometry(0.012, 0.11, D), L.lacquer, s * (W / 2 - 0.006), 0.055, 0));
+  body.add(mesh(new THREE.BoxGeometry(W, 0.11, 0.012), L.lacquer, 0, 0.055, -D / 2 + 0.006));
 
   // Brass case: a keyboard slope in front, flat behind.
   const prof = new THREE.Shape();
@@ -1727,12 +1780,15 @@ function buildRegister(M, L) {
 
   // Drawer: walnut front, brass pull, coin cups inside.
   const drawer = new THREE.Group();
-  drawer.add(mesh(new THREE.BoxGeometry(W - 0.026, 0.084, 0.014), M.woodDark, 0, 0.055, D / 2 - 0.007));
+  drawer.add(mesh(new THREE.BoxGeometry(W - 0.026, 0.084, 0.014), L.lacquer, 0, 0.055, D / 2 - 0.007));
   drawer.add(rod([-0.04, 0.055, D / 2 + 0.012], [0.04, 0.055, D / 2 + 0.012], 0.006, M.brass));
   for (const s of [-1, 1]) drawer.add(rod([s * 0.04, 0.055, D / 2], [s * 0.04, 0.055, D / 2 + 0.012], 0.004, M.brass));
-  drawer.add(mesh(new THREE.BoxGeometry(W - 0.04, 0.008, D - 0.04), M.woodDark, 0, 0.018, 0));
-  for (let i = 0; i < 5; i++) drawer.add(mesh(new THREE.CylinderGeometry(0.026, 0.024, 0.012, 20), M.brass, -0.13 + i * 0.065, 0.028, 0.09));
-  for (let i = 0; i < 3; i++) drawer.add(mesh(new THREE.BoxGeometry(0.1, 0.012, 0.15), M.towel, -0.12 + i * 0.12, 0.028, -0.06));
+  drawer.add(mesh(new THREE.BoxGeometry(W - 0.04, 0.008, D - 0.04), L.lacquer, 0, 0.018, 0));
+  for (let i = 0; i < 5; i++) drawer.add(mesh(new THREE.CylinderGeometry(0.026, 0.024, 0.012, 20), M.brass, -0.13 + i * 0.065, 0.028, 0.06));
+  for (let i = 0; i < 3; i++) {
+    const notes = atlas(new THREE.PlaneGeometry(0.15, 0.076), ART.notes).rotateX(-Math.PI / 2).rotateY(Math.PI / 2);
+    drawer.add(mesh(notes, L.print, -0.12 + i * 0.12, 0.03, -0.08));
+  }
   const drawerMesh = bake(drawer);
   moving.add(drawerMesh);
 
@@ -1861,7 +1917,7 @@ function buildClubChair(M) {
 
   g.add(mesh(new RoundedBoxGeometry(0.6, 0.13, 0.62, 4, 0.05), M.leather, 0, 0.38, 0.03));
   g.add(mesh(new THREE.BoxGeometry(0.58, 0.26, 0.58), M.leather, 0, 0.2, 0.02));
-  const nail = new THREE.SphereGeometry(0.0055, 8, 6);
+  const nail = new THREE.SphereGeometry(0.0055, 6, 4);
   const ring = R + 0.04;
   for (let d = 0; d < F; d += 0.028) for (const sx of [-1, 1]) g.add(mesh(nail, M.brass, sx * ring, 0.12, F - d));
   for (let a = 0; a <= Math.PI + 1e-3; a += 0.028 / ring) g.add(mesh(nail, M.brass, Math.cos(a) * ring, 0.12, -Math.sin(a) * ring));
@@ -1882,7 +1938,7 @@ function buildCoffeeTable(M, L) {
   const rim = mesh(new THREE.TorusGeometry(0.342, 0.009, 8, 64), M.brass, 0, 0.43, 0);
   rim.rotation.x = Math.PI / 2;
   g.add(rim);
-  g.add(mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.05, 48, 1, true), M.woodDark, 0, 0.39, 0));
+  g.add(mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.05, 48, 1, true), L.lacquer, 0, 0.39, 0));
   g.add(mesh(lathe([[0, 0], [0.2, 0], [0.2, 0.014], [0.07, 0.05], [0.032, 0.1], [0.026, 0.34], [0.07, 0.38], [0, 0.38]], 40), M.brass));
 
   // Magazines fanned on one side, a tray with two espressos on the other.
@@ -1923,7 +1979,7 @@ function buildRug(L) {
 // Bentwood coat stand with a fedora on one hook and a tartan scarf on another.
 function buildCoatStand(M, L) {
   const g = new THREE.Group();
-  g.add(mesh(lathe([[0, 0.3], [0.03, 0.3], [0.024, 0.4], [0.02, 1.0], [0.026, 1.05], [0.019, 1.1], [0.018, 1.72], [0.028, 1.76], [0.03, 1.8], [0, 1.86]], 20), M.woodDark));
+  g.add(mesh(lathe([[0, 0.3], [0.03, 0.3], [0.024, 0.4], [0.02, 1.0], [0.026, 1.05], [0.019, 1.1], [0.018, 1.72], [0.028, 1.76], [0.03, 1.8], [0, 1.86]], 20), L.lacquer));
   g.add(mesh(new THREE.SphereGeometry(0.032, 16, 12), M.brass, 0, 1.87, 0));
   for (const y of [0.42, 1.06]) {
     const band = mesh(new THREE.TorusGeometry(0.024, 0.005, 6, 20), M.brass, 0, y, 0);
@@ -1934,7 +1990,7 @@ function buildCoatStand(M, L) {
     const a = (i / 3) * TAU;
     const c = Math.cos(a);
     const s = Math.sin(a);
-    g.add(mesh(tube([[0.01 * c, 0.42, 0.01 * s], [0.09 * c, 0.3, 0.09 * s], [0.2 * c, 0.1, 0.2 * s], [0.33 * c, 0.02, 0.33 * s]], 0.015, 24, 8), M.woodDark));
+    g.add(mesh(tube([[0.01 * c, 0.42, 0.01 * s], [0.09 * c, 0.3, 0.09 * s], [0.2 * c, 0.1, 0.2 * s], [0.33 * c, 0.02, 0.33 * s]], 0.015, 24, 8), L.lacquer));
     g.add(mesh(new THREE.SphereGeometry(0.02, 12, 8), M.brass, 0.34 * c, 0.018, 0.34 * s));
   }
   // Hooks: three high, three low between them.
@@ -1961,16 +2017,23 @@ function buildCoatStand(M, L) {
   return g;
 }
 
-// A strip of cloth folded over a hook: both ends hang, slightly swung.
+// A strip of cloth folded over a hook: the back end hangs longer, and both
+// ends drift apart and away from the pole as they fall.
 function scarf(L, hy, angle) {
-  const width = 0.16;
+  const width = 0.15;
   const pts = [];
-  for (let i = 0; i <= 16; i++) pts.push(new THREE.Vector3(0, hy - 0.62 + (i / 16) * 0.6, -0.025 - 0.012 * Math.sin(i * 0.7)));
-  for (let i = 0; i <= 8; i++) {
-    const a = Math.PI * (i / 8);
-    pts.push(new THREE.Vector3(0, hy + 0.012 + Math.sin(a) * 0.02, -Math.cos(a) * 0.025));
+  for (let i = 0; i <= 12; i++) {
+    const t = 1 - i / 12; // 1 at the bottom of the back end
+    pts.push(new THREE.Vector3(-0.025 * t, hy - 0.04 - t * 0.6, -0.02 - 0.03 * t * t));
   }
-  for (let i = 16; i >= 0; i--) pts.push(new THREE.Vector3(0, hy - 0.5 + (i / 16) * 0.48, 0.03 + 0.015 * Math.sin(i * 0.5)));
+  for (let i = 1; i < 8; i++) {
+    const a = Math.PI * (i / 8);
+    pts.push(new THREE.Vector3(0, hy - 0.04 + Math.sin(a) * 0.035, -Math.cos(a) * 0.02));
+  }
+  for (let i = 0; i <= 12; i++) {
+    const t = i / 12; // 1 at the bottom of the front end
+    pts.push(new THREE.Vector3(0.03 * t, hy - 0.04 - t * 0.46, 0.02 + 0.045 * t * t));
+  }
   const pos = [];
   const uv = [];
   const idx = [];
@@ -1978,7 +2041,7 @@ function scarf(L, hy, angle) {
   pts.forEach((p, i) => {
     if (i) len += p.distanceTo(pts[i - 1]);
     for (const side of [0, 1]) {
-      pos.push(p.x + (side - 0.5) * width * (1 + 0.1 * Math.sin(i)), p.y, p.z);
+      pos.push(p.x + (side - 0.5) * width, p.y, p.z);
       uv.push(side, len / 1.3);
     }
     if (i) idx.push(i * 2 - 2, i * 2 - 1, i * 2, i * 2 - 1, i * 2 + 1, i * 2);
@@ -2027,13 +2090,15 @@ function buildPalm(M, L) {
     const yaw = f * 2.4 + r() * 0.3;
     const lean = 0.25 + r() * 0.6;
     const len = 1.15 + r() * 0.55;
+    // Against a wall: fronds that would point into it swing round to the sides.
     const out = new THREE.Vector3(Math.cos(yaw), 0, Math.sin(yaw));
+    if (out.z < 0) out.setZ(out.z * 0.25).normalize();
     const curve = new THREE.QuadraticBezierCurve3(
       base.clone().addScaledVector(out, 0.02),
       base.clone().addScaledVector(out, len * 0.25 * lean).add(new THREE.Vector3(0, len * 0.95, 0)),
       base.clone().addScaledVector(out, len * (0.35 + lean * 0.55)).add(new THREE.Vector3(0, len * (1.0 - lean * 0.45), 0))
     );
-    parts.push(color(new THREE.TubeGeometry(curve, 16, 0.0065, 5), 0.24, 0.2).deleteAttribute('uv'));
+    parts.push(color(new THREE.TubeGeometry(curve, 16, 0.009, 6), 0.25, 0.3).deleteAttribute('uv'));
     for (let i = 0; i < 20; i++) {
       const t = 0.28 + (i / 19) * 0.7;
       const p = curve.getPoint(t);
@@ -2090,7 +2155,7 @@ function buildClock(M, L) {
     else oct.moveTo(x, y);
   }
   oct.holes.push(new THREE.Path().absarc(0, 0, 0.205, 0, TAU, true));
-  body.add(mesh(extrude(oct, 0.05, 0.005), M.woodDark, 0, 0, 0.025));
+  body.add(mesh(extrude(oct, 0.05, 0.005), L.lacquer, 0, 0, 0.025));
   body.add(mesh(atlas(new THREE.CircleGeometry(0.206, 64), ART.clock), L.print, 0, 0, 0.03));
   body.add(mesh(new THREE.TorusGeometry(0.208, 0.009, 10, 72), M.brass, 0, 0, 0.052));
   body.add(mesh(new THREE.CircleGeometry(0.205, 48), M.glass, 0, 0, 0.058));
@@ -2103,7 +2168,7 @@ function buildClock(M, L) {
   drop.quadraticCurveTo(0.14, -0.62, 0, -0.68);
   drop.quadraticCurveTo(-0.14, -0.62, -0.16, -0.5);
   drop.closePath();
-  body.add(mesh(extrude(drop, 0.045, 0.005), M.woodDark, 0, 0, 0.023));
+  body.add(mesh(extrude(drop, 0.045, 0.005), L.lacquer, 0, 0, 0.023));
   body.add(mesh(new THREE.PlaneGeometry(0.12, 0.15), M.ebony, 0, -0.46, 0.052));
   for (const [x, y, w, h] of [[0, -0.38, 0.14, 0.012], [0, -0.54, 0.14, 0.012], [-0.065, -0.46, 0.012, 0.17], [0.065, -0.46, 0.012, 0.17]]) {
     body.add(mesh(new THREE.BoxGeometry(w, h, 0.008), M.brass, x, y, 0.057));
@@ -2174,7 +2239,7 @@ function buildFan(M, L) {
   for (let i = 0; i < 4; i++) {
     const arm = new THREE.Group();
     arm.rotation.y = (i / 4) * TAU;
-    const b = mesh(blade, M.woodDark, 0.17, -0.035, 0);
+    const b = mesh(blade, M.wood, 0.17, -0.035, 0);
     b.rotation.x = 0.2;
     arm.add(b);
     arm.add(mesh(new THREE.BoxGeometry(0.2, 0.008, 0.034), M.brass, 0.18, -0.026, 0));

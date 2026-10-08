@@ -34,7 +34,7 @@ const CLOTH_COLOR = 0x0f4f50;
 const corner = (sx, sz) => ({ x: sx * (HX + 0.03), z: sz * (HZ + 0.03), r: Math.hypot(0.03 + JAW - CW, 0.03 - CW) });
 const side = (sz) => ({ x: 0, z: sz * (HZ + 0.04), r: 0.075 });
 const POCKETS = [corner(1, 1), side(1), corner(-1, 1), corner(-1, -1), side(-1), corner(1, -1)];
-const SIDE_BACK = Math.sqrt(0.075 ** 2 - (BZ - HZ - 0.04) ** 2); // where a side jaw meets its hole
+const SIDE_BACK = Math.sqrt(POCKETS[1].r ** 2 - (BZ - POCKETS[1].z) ** 2); // where a side jaw meets its hole
 const PX = Float64Array.from(POCKETS, (p) => p.x);
 const PZ = Float64Array.from(POCKETS, (p) => p.z);
 const PR2 = Float64Array.from(POCKETS, (p) => p.r * p.r);
@@ -172,7 +172,7 @@ export async function createPool(ctx) {
   const sign = neonPlane(await signCanvas(), 1.0, 0.39);
   sign.position.set(12.6, 2.64, -2.165);
   const halo = new THREE.Mesh(
-    new THREE.PlaneGeometry(2.0, 1.1),
+    new THREE.PlaneGeometry(1.7, 1.0),
     new THREE.MeshBasicMaterial({ map: T.dot, color: 0x000000, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false })
   );
   halo.position.set(12.6, 2.6, -2.195);
@@ -534,10 +534,11 @@ export async function createPool(ctx) {
   }
 
   function light(env) {
-    const lit = env.power * (1 - 0.2 * env.afterHours);
+    const lit = env.power * (1 - 0.3 * env.afterHours);
     X.shadeGlow.color.setScalar(1.7 * lit);
     X.bulb.color.setRGB(9, 5.6, 2.8).multiplyScalar(lit);
     X.cone.uniforms.uIntensity.value = 0.05 * lit;
+    X.wash.color.setScalar(0.55 * lit);
     X.cloth.emissiveIntensity = (spot ? 0.03 : 0.22) * lit;
     if (spot) spot.intensity = 9 * lit;
     const n = neonLevel(env.since === null ? null : env.since - 2.1, env.power, env.reduced) * env.glow;
@@ -635,6 +636,7 @@ function makeMaterials(T, tier) {
     shadeGlow: new THREE.MeshBasicMaterial({ map: shadeTexture(), color: 0x000000, side: THREE.BackSide }),
     bulb: new THREE.MeshBasicMaterial({ color: 0x000000 }),
     chalk: new THREE.MeshStandardMaterial({ color: 0x2b62c2, roughness: 1 }),
+    wash: new THREE.MeshBasicMaterial({ map: washTexture(), color: 0x000000, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }),
     cone: coneMaterial(),
     cues: CUE_STYLES.map(
       (s) => new THREE.MeshPhysicalMaterial({ map: cueTexture(s), roughness: 0.3, clearcoat: 0.8, clearcoatRoughness: 0.12 })
@@ -700,6 +702,22 @@ function shadeTexture() {
   return t;
 }
 
+// The picture light's pool of light on the cue board, brightest at the top.
+function washTexture() {
+  const [c, g] = makeCanvas(128, 128);
+  g.fillStyle = '#000';
+  g.fillRect(0, 0, 128, 128);
+  const grad = g.createRadialGradient(64, -20, 0, 64, -20, 150);
+  grad.addColorStop(0, 'rgba(255,214,160,1)');
+  grad.addColorStop(0.45, 'rgba(255,190,130,0.45)');
+  grad.addColorStop(1, 'rgba(255,170,110,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 128, 128);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
 // Soft round contact shadow (alpha in the green channel).
 function blobTexture() {
   const [c, g] = makeCanvas(64);
@@ -729,7 +747,7 @@ function floorShadowTexture() {
     g.fill();
   };
   rect(206, 116, 22, '#9c9c9c', 12);
-  rect(150, 84, 10, '#e0e0e0', 8);
+  rect(150, 84, 10, '#f4f4f4', 8);
   g.filter = 'blur(4px)';
   g.fillStyle = '#fff';
   for (const sx of [-1, 1]) {
@@ -1237,7 +1255,7 @@ function buildTable(M, X) {
   // Nothing here casts real shadows, so the table's shadow is painted on.
   const shadow = new THREE.Mesh(
     new THREE.PlaneGeometry(4.4, 2.9).rotateX(-Math.PI / 2),
-    new THREE.MeshBasicMaterial({ color: 0x000000, alphaMap: floorShadowTexture(), transparent: true, opacity: 0.85, depthWrite: false })
+    new THREE.MeshBasicMaterial({ color: 0x000000, alphaMap: floorShadowTexture(), transparent: true, opacity: 0.95, depthWrite: false })
   );
   shadow.position.y = 0.002;
   g.add(shadow);
@@ -1315,6 +1333,18 @@ function buildWall(M, X, cueGeo) {
     g.add(mesh(clip, M.brass, x, 1.82, -2.091));
   });
 
+  // A brass picture light over the board, washing it in warm light.
+  for (const x of [12.25, 12.95]) {
+    const arm = mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.1, 10), M.brass, x, 2.03, -2.115);
+    arm.rotation.x = -1.0;
+    g.add(arm);
+  }
+  const hood = mesh(new RoundedBoxGeometry(0.82, 0.022, 0.075, 2, 0.008), M.brass, 12.6, 2.0, -2.07);
+  hood.rotation.x = 0.35;
+  g.add(hood);
+  g.add(mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.74, 12).rotateZ(Math.PI / 2), X.bulb, 12.6, 1.985, -2.075));
+  g.add(new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.84), X.wash).translateX(12.6).translateY(1.6).translateZ(-2.1705));
+
   // Peg for the triangle, and a chalk shelf under it.
   const peg = mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.06, 12), M.brass, 12.9, 1.74, -2.145);
   peg.rotation.x = Math.PI / 2;
@@ -1369,11 +1399,13 @@ function buildTriangle(M, X) {
 // A cue as a lathe from butt (y = 0) to tip (y = CUE_LEN), with a pro taper
 // on the shaft; v runs along the length so the skin lines up.
 function cueGeometry() {
+  const joint = 0.752;
+  const straight = CUE_LEN - 0.3; // the last 30 cm of shaft keep the tip's size
   const radius = (s) => {
     if (s < 0.012) return 0.0146;
     if (s < 0.735) return lerp(0.0152, 0.011, s / 0.735);
-    if (s < 0.752) return 0.0113;
-    return 0.0065 + 0.0042 * clamp((CUE_LEN - 0.3 - s) / (CUE_LEN - 1.052), 0, 1) ** 1.3;
+    if (s < joint) return 0.0113;
+    return 0.0065 + 0.0042 * clamp((straight - s) / (straight - joint), 0, 1) ** 1.3;
   };
   const pts = [[0, 0]];
   for (let s = 0; s < CUE_LEN - 0.005; s += 0.01) pts.push([radius(s), s]);
