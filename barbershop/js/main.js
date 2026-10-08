@@ -31,9 +31,9 @@ const store = {
 const money = new Intl.NumberFormat(SHOP.locale, { style: 'currency', currency: SHOP.currency, maximumFractionDigits: 0 });
 
 // Scene darkness behind each section, so text stays readable.
-const DIM = { hero: 0, story: 0.18, services: 0.62, craft: 0, team: 0.6, shelf: 0.2, club: 0.6, words: 0.5, book: 0.74, visit: 0.38, footer: 0.6 };
+const DIM = { hero: 0, story: 0.18, services: 0.62, fadelab: 0.15, craft: 0, team: 0.6, cutbook: 0.55, shelf: 0.2, lounge: 0.1, club: 0.6, words: 0.5, book: 0.74, visit: 0.38, footer: 0.6 };
 // On tall phone screens text covers more of the scene.
-const DIM_PORTRAIT = { ...DIM, story: 0.45, shelf: 0.62, words: 0.6, visit: 0.5 };
+const DIM_PORTRAIT = { ...DIM, story: 0.45, fadelab: 0.5, shelf: 0.62, lounge: 0.35, words: 0.6, visit: 0.5 };
 const portrait = matchMedia('(max-aspect-ratio: 9 / 10)');
 
 let stage = null;
@@ -466,6 +466,23 @@ function initFooterNeon() {
     },
     { threshold: 0.4 }
   ).observe(word);
+}
+
+// ======================================================================
+// Pool table controls
+// ======================================================================
+
+function initPool() {
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-pool]');
+    if (!btn) return;
+    if (!stage?.pool.ready()) {
+      toast('The pool table needs 3D graphics, which this device has turned off.');
+      return;
+    }
+    if (btn.dataset.pool === 'break') stage.pool.breakShot();
+    else if (btn.dataset.pool === 'rack') stage.pool.rack();
+  });
 }
 
 // ======================================================================
@@ -1165,6 +1182,18 @@ function initPointer() {
     }
   }
 
+  // Tap or click the pool table to shoot the cue ball at that spot.
+  const loungeEl = $('#lounge');
+  const inLounge = () => {
+    const r = loungeEl.getBoundingClientRect();
+    return r.top < innerHeight * 0.5 && r.bottom > innerHeight * 0.5;
+  };
+  document.addEventListener('click', (e) => {
+    if (!stage?.pool.ready() || !inLounge()) return;
+    if (e.target.closest('a, button, input, textarea, label, summary, .menu, .nav, [data-no-shoot]')) return;
+    stage.pool.shootAt(e.clientX, e.clientY);
+  });
+
   // Spin the chair by dragging it in the hero.
   let drag = null;
   const hint = $('#spin-hint');
@@ -1205,10 +1234,11 @@ function initPointer() {
       // Hovering the chair shows a "Spin" label.
       if (stage && ++hoverCheck % 4 === 0) {
         const over = !drag && !pointer.overUi && inHero() && stage.hitsChair(pointer.x, pointer.y);
+        const cue = !over && !pointer.overUi && stage.pool.ready() && inLounge() && stage.pool.hits(pointer.x, pointer.y);
         root.classList.toggle('grab-chair', over || !!drag);
         if (!pointer.label) {
-          cursor.classList.toggle('is-label', over || !!drag);
-          labelEl.textContent = over || drag ? 'Spin' : '';
+          cursor.classList.toggle('is-label', over || !!drag || cue);
+          labelEl.textContent = over || drag ? 'Spin' : cue ? 'Shoot' : '';
         }
       }
     }
@@ -1340,6 +1370,15 @@ let measureSoon = () => {};
 // Boot
 // ======================================================================
 
+// Loads a module that adds to the page; if it fails, the page carries on.
+async function loadOptional(path, use) {
+  try {
+    use(await import(path));
+  } catch (err) {
+    console.warn(`${path} skipped:`, err);
+  }
+}
+
 function webglAvailable() {
   try {
     const c = document.createElement('canvas');
@@ -1358,11 +1397,14 @@ async function boot() {
   renderTeam();
   renderShelf();
   renderClub();
+  await loadOptional('./sections.js', (m) => m.mountSections({ SHOP, SERVICES, BARBERS, reduced, finePointer, toast }));
   initBooker();
   initAfterHours();
   initFooterNeon();
+  initPool();
   const ringTick = initRing();
   const tapeTicks = initTape();
+  await loadOptional('./fx.js', (m) => m.initFx({ reduced, finePointer, toast }));
   initReveal();
   initCounters();
   const menuOpen = initMenu();
