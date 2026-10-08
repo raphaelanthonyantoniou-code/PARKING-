@@ -1731,6 +1731,65 @@ main, .footer { position: relative; z-index: 3; }
 }
 .toast.is-on { transform: translate(-50%, 0); opacity: 1; visibility: visible; transition: transform 0.5s var(--ease-out), opacity 0.3s; }
 
+/* ---------------------------------------------------------------- slogan */
+
+.slogan {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: grid;
+  align-items: center;
+  padding-block: clamp(90px, 14vh, 160px);
+}
+.slogan::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(10, 12, 11, 0.72) 0%, rgba(10, 12, 11, 0.4) 42%, transparent 66%);
+}
+.slogan-inner { display: grid; gap: 26px; justify-items: start; }
+.slogan-lines {
+  display: grid;
+  gap: 0.12em;
+  max-width: 9em;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2.3rem, 1rem + 3.6vw, 4.4rem);
+  line-height: 0.95;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+.slogan-line { display: block; color: var(--neon-on); text-shadow: var(--neon-glow); }
+.slogan-line.is-cyan {
+  --neon-on: #e6fdff;
+  --neon-off: rgba(200, 245, 255, 0.14);
+  --neon-glow: 0 0 2px #fff, 0 0 8px #45e0f0, 0 0 18px #45e0f0, 0 0 36px rgba(40, 200, 230, 0.7), 0 0 72px rgba(40, 200, 230, 0.4);
+}
+.slogan-woo {
+  display: block;
+  justify-self: start;
+  font-size: 2.2em;
+  line-height: 1.05;
+  padding: 0 0.1em 0.1em 0;
+  transform-origin: 20% 70%;
+}
+.slogan-cta { margin-top: 6px; }
+
+/* Unlit tubes until the section comes into view, then each line stutters
+   on in turn and "Woo!" pops. */
+.js .slogan:not(.is-lit) .slogan-line,
+.js .slogan:not(.is-lit) .slogan-woo { color: var(--neon-off); text-shadow: none; }
+.slogan.is-lit .slogan-line,
+.slogan.is-lit .slogan-woo { animation: neon-on 1.2s steps(1, end) both; animation-delay: calc(var(--i) * 0.6s); }
+.slogan.is-lit .slogan-woo { animation: neon-on 1s steps(1, end) 1.8s both, woo-pop 0.9s var(--ease-out) 1.8s both; }
+@keyframes woo-pop {
+  0% { transform: scale(0.6) rotate(-8deg); }
+  55% { transform: scale(1.12) rotate(3deg); }
+  100% { transform: none; }
+}
+
 /* ---------------------------------------------------------------- after hours switch */
 
 .neon-switch {
@@ -2058,6 +2117,8 @@ main, .footer { position: relative; z-index: 3; }
 
 /* Portrait: the 3D scene takes one half of the screen, text the other. */
 @media (max-aspect-ratio: 9 / 10) {
+  .slogan { align-items: end; }
+  .slogan::before { background: linear-gradient(0deg, rgba(10, 12, 11, 0.8) 0%, rgba(10, 12, 11, 0.5) 45%, transparent 70%); }
   .hero::before { background: linear-gradient(180deg, rgba(10, 12, 11, 0.72) 0%, rgba(10, 12, 11, 0.45) 45%, transparent 68%); }
   .hero-inner { align-items: start; }
   .hero-copy { padding-top: 18px; gap: 18px; }
@@ -2157,4 +2218,6 @@ main, .footer { position: relative; z-index: 3; }
     scroll-behavior: auto !important;
   }
   .grain { display: none; }
+  .slogan.is-lit .slogan-line,
+  .slogan.is-lit .slogan-woo { animation-delay: 0s !important; }
 }

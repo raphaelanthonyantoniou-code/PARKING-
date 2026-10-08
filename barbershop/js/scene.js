@@ -34,6 +34,7 @@ const v3 = (a) => new THREE.Vector3(a[0], a[1], a[2]);
 // The `m*` values apply on portrait screens.
 export const VIEWS = {
   hero: { pos: [0.55, 1.3, 4.3], focus: [0, 1.0, -0.4], shift: [0.3, -0.02], mshift: [0, -0.4], mdist: 1.55, orbitR: 1.08, orbitY: 1.12, show: 0 },
+  slogan: { pos: [-3.45, 1.5, 2.5], focus: [-3.95, 1.45, -1.1], shift: [0.4, 0], mshift: [0, 0.46], mdist: 1.65, orbitR: 1.08, orbitY: 1.12, show: 0 },
   story: { pos: [1.15, 1.72, 0.35], focus: [1.45, 1.74, -1.98], shift: [0.34, 0], mshift: [0.62, -0.1], mdist: 1.6, orbitR: 0.9, orbitY: 3.1, show: 0 },
   services: { pos: [1.2, 3.2, 7.0], focus: [1.2, 1.1, -0.8], shift: [0, 0], mshift: [0, 0], mdist: 1.3, orbitR: 1.75, orbitY: 1.75, show: 0 },
   craft: { pos: [-0.22, 1.44, 2.95], focus: [-0.98, 1.32, 1.2], shift: [0.34, 0], mshift: [0, 0.34], mdist: 2.3, orbitR: 1.1, orbitY: 1.2, show: 1 },
@@ -204,6 +205,15 @@ export async function createStage(canvas, opts = {}) {
   pole.position.set(1.45, 1.78, -1.98);
   scene.add(pole);
 
+  // A giant barber-striped lollipop on a brass stand, and a jar of small
+  // ones on the main counter for the kids.
+  const lolly = buildLollipop(M);
+  lolly.group.position.set(-3.95, 0, -1.1);
+  scene.add(lolly.group);
+  const jar = bake(buildLollipopJar(M, lolly.candy));
+  jar.position.set(0.42, 0.93, -1.93);
+  scene.add(jar);
+
   // Pendant bulbs over the chairs.
   const bulbs = [];
   for (const [x, y, z] of [[-0.95, 2.62, -0.7], [0.05, 2.9, -1.25], [1.0, 2.55, -0.55], [-3.3, 2.75, -0.8], [3.2, 2.6, -0.7], [6.1, 2.8, -0.9]]) {
@@ -324,6 +334,7 @@ export async function createStage(canvas, opts = {}) {
     poleBoost: 0,
     neonFlicker: 0,
     afterHours: 0,
+    lollySpin: 0,
   };
 
   const cur = {
@@ -475,6 +486,11 @@ export async function createStage(canvas, opts = {}) {
     chair.swivel.rotation.y = state.yaw;
 
     updateTools(time, dt);
+
+    // The lollipop turns slowly on its stick and spins up on "Woo!".
+    state.lollySpin *= Math.exp(-dt * 0.9);
+    lolly.spin.rotation.y += dt * ((reduced ? 0 : 0.35) + state.lollySpin);
+    lolly.spin.position.y = reduced ? 0 : Math.sin(time * 1.3) * 0.008;
 
     // Lights and glow. After hours, the house lights drop and the neon
     // takes over.
@@ -651,6 +667,11 @@ export async function createStage(canvas, opts = {}) {
     },
     setAfterHours(on) {
       state.afterHours = on ? 1 : 0;
+    },
+    woo() {
+      state.lollySpin = reduced ? 0 : 16;
+      state.poleBoost = 1;
+      state.neonFlicker = 0.4;
     },
     celebrate() {
       state.yawVel = reduced ? 0 : 13;
@@ -834,6 +855,119 @@ function buildPole(M, uniforms) {
 }
 
 // ---------------------------------------------------------------- props
+
+// Red, white and blue barber stripes for candy. Drawn as diagonals so the
+// lathe UVs (around × along the profile) turn them into a spiral.
+function swirlTexture() {
+  const [c, g] = makeCanvas(512);
+  const img = g.createImageData(512, 512);
+  const cols = [[214, 30, 44], [255, 244, 234], [32, 72, 168], [255, 244, 234]];
+  for (let y = 0; y < 512; y++) {
+    for (let x = 0; x < 512; x++) {
+      const f = (((x + y) / 512) * 2) % 1;
+      const band = Math.floor(f * 4);
+      const edge = (f * 4) % 1;
+      const a = cols[band];
+      const b = cols[(band + 1) % 4];
+      const k = edge > 0.94 ? (edge - 0.94) / 0.06 : 0;
+      const i = (y * 512 + x) * 4;
+      img.data[i] = a[0] + (b[0] - a[0]) * k;
+      img.data[i + 1] = a[1] + (b[1] - a[1]) * k;
+      img.data[i + 2] = a[2] + (b[2] - a[2]) * k;
+      img.data[i + 3] = 255;
+    }
+  }
+  g.putImageData(img, 0, 0);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(3, 2);
+  return t;
+}
+
+// A puffy candy disc lying in the xz plane: a lathe from the centre of one
+// face, round the edge, to the centre of the other.
+function candyDisc(r, t) {
+  const e = t / 2;
+  const pts = [new THREE.Vector2(0, e)];
+  for (let i = 0; i <= 6; i++) pts.push(new THREE.Vector2(r * 0.55 + (r * 0.4 * i) / 6, e * (1 - 0.06 * (i / 6))));
+  for (let i = 0; i <= 12; i++) {
+    const a = Math.PI / 2 - (Math.PI * i) / 12;
+    pts.push(new THREE.Vector2(r * 0.95 + Math.cos(a) * r * 0.05, Math.sin(a) * e));
+  }
+  for (let i = 6; i >= 0; i--) pts.push(new THREE.Vector2(r * 0.55 + (r * 0.4 * i) / 6, -e * (1 - 0.06 * (i / 6))));
+  pts.push(new THREE.Vector2(0, -e));
+  return new THREE.LatheGeometry(pts, 96);
+}
+
+function buildLollipop(M) {
+  const candy = new THREE.MeshPhysicalMaterial({
+    map: swirlTexture(),
+    roughness: 0.2,
+    clearcoat: 1,
+    clearcoatRoughness: 0.04,
+  });
+  const satin = new THREE.MeshPhysicalMaterial({ color: 0xff4f9a, roughness: 0.35, sheen: 1, sheenColor: new THREE.Color(0xffc2dc) });
+
+  const group = new THREE.Group();
+  // Weighted brass pot filled with dark pebbles.
+  const pot = [[0, 0], [0.13, 0], [0.15, 0.02], [0.17, 0.2], [0.185, 0.215], [0.17, 0.22], [0, 0.2]].map(([x, y]) => new THREE.Vector2(x, y));
+  const base = new THREE.Group();
+  base.add(mesh(new THREE.LatheGeometry(pot, 48), M.brass));
+  base.add(mesh(new THREE.CylinderGeometry(0.165, 0.165, 0.01, 40), M.rubber, 0, 0.2, 0));
+  group.add(bake(base));
+
+  // Everything above the pot turns.
+  const spin = new THREE.Group();
+  group.add(spin);
+  spin.add(mesh(new THREE.CylinderGeometry(0.016, 0.016, 1.12, 16), M.ivory, 0, 0.76, 0));
+  const disc = mesh(candyDisc(0.3, 0.085), candy, 0, 1.58, 0);
+  disc.rotation.x = Math.PI / 2;
+  spin.add(disc);
+
+  // A satin bow where the stick meets the candy.
+  const bow = new THREE.Group();
+  bow.position.set(0, 1.26, 0.02);
+  for (const s of [-1, 1]) {
+    const loop = mesh(new THREE.TorusGeometry(0.045, 0.012, 10, 28), satin, s * 0.05, 0.005, 0);
+    loop.scale.set(1, 0.6, 0.5);
+    loop.rotation.z = s * 0.35;
+    bow.add(loop);
+    const tail = mesh(new THREE.BoxGeometry(0.024, 0.11, 0.006), satin, s * 0.03, -0.06, 0.004);
+    tail.rotation.z = s * 0.4;
+    bow.add(tail);
+  }
+  bow.add(mesh(new THREE.SphereGeometry(0.018, 16, 12), satin));
+  spin.add(bow);
+
+  return { group, spin, candy };
+}
+
+// A glass jar of small lollipops for the counter.
+function buildLollipopJar(M, candy) {
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.07, 0.17, 40, 1, true), M.glass).translateY(0.085));
+  g.add(mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.008, 40), M.glass, 0, 0.004, 0));
+  const disc = candyDisc(0.026, 0.012);
+  const r = rng(23);
+  for (let i = 0; i < 9; i++) {
+    const a = (i / 9) * TAU + r() * 0.4;
+    const rad = i === 0 ? 0 : 0.03 + r() * 0.015;
+    const tilt = 0.15 + r() * 0.25;
+    const x = Math.cos(a) * rad;
+    const z = Math.sin(a) * rad;
+    const h = 0.2 + r() * 0.07;
+    const stick = new THREE.Group();
+    stick.position.set(x * 0.4, 0.01, z * 0.4);
+    stick.rotation.set(Math.sin(a) * tilt, 0, -Math.cos(a) * tilt);
+    stick.add(mesh(new THREE.CylinderGeometry(0.0035, 0.0035, h, 8), M.ivory, 0, h / 2, 0));
+    const d = mesh(disc, candy, 0, h + 0.022, 0);
+    d.rotation.set(Math.PI / 2, r() * TAU, 0);
+    stick.add(d);
+    g.add(stick);
+  }
+  return g;
+}
 
 function buildBulb(M) {
   const g = new THREE.Group();

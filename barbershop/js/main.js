@@ -31,9 +31,9 @@ const store = {
 const money = new Intl.NumberFormat(SHOP.locale, { style: 'currency', currency: SHOP.currency, maximumFractionDigits: 0 });
 
 // Scene darkness behind each section, so text stays readable.
-const DIM = { hero: 0, story: 0.18, services: 0.62, fadelab: 0.15, craft: 0, team: 0.6, cutbook: 0.55, shelf: 0.2, lounge: 0.1, club: 0.6, words: 0.5, book: 0.74, visit: 0.38, footer: 0.6 };
+const DIM = { hero: 0, slogan: 0.12, story: 0.18, services: 0.62, fadelab: 0.15, craft: 0, team: 0.6, cutbook: 0.55, shelf: 0.2, lounge: 0.1, club: 0.6, words: 0.5, book: 0.74, visit: 0.38, footer: 0.6 };
 // On tall phone screens text covers more of the scene.
-const DIM_PORTRAIT = { ...DIM, story: 0.45, fadelab: 0.5, shelf: 0.62, lounge: 0.35, words: 0.6, visit: 0.5 };
+const DIM_PORTRAIT = { ...DIM, slogan: 0.35, story: 0.45, fadelab: 0.5, shelf: 0.62, lounge: 0.35, words: 0.6, visit: 0.5 };
 const portrait = matchMedia('(max-aspect-ratio: 9 / 10)');
 
 let stage = null;
@@ -450,6 +450,25 @@ function initAfterHours() {
     toast(afterHours ? 'House lights down. Neon on.' : 'House lights back on.');
   });
   applyAfterHours();
+}
+
+// The slogan lights up line by line the first time it comes into view;
+// when "Woo!" lights, the lollipop in the shop spins.
+function initSlogan() {
+  const el = $('#slogan');
+  const light = () => {
+    el.classList.add('is-lit');
+    setTimeout(() => stage?.woo(), reduced ? 0 : 1800);
+  };
+  if (!('IntersectionObserver' in window)) return light();
+  new IntersectionObserver(
+    ([e], io) => {
+      if (!e.isIntersecting) return;
+      io.disconnect();
+      light();
+    },
+    { threshold: 0.45 }
+  ).observe(el);
 }
 
 function initFooterNeon() {
@@ -1041,7 +1060,7 @@ function initBooker() {
 // ======================================================================
 
 function initTape() {
-  const words = ['Skin fades', 'Hot towel shaves', 'Beard sculpting', 'Scissor cuts', 'Walk-ins welcome', 'Junior cuts', 'Straight razor'];
+  const words = ['Skin fades', 'Get your fade cut', 'Hot towel shaves', 'Beard sculpting', 'Woo!', 'Scissor cuts', 'Walk-ins welcome', 'Lollipops for the kids', 'Straight razor'];
   return $$('[data-marquee]').map((track) => {
     const dir = Number(track.dataset.marquee);
     const set = (dir > 0 ? words : [...words].reverse()).map((w) => `<span>${w}</span>`).join('');
@@ -1401,6 +1420,7 @@ async function boot() {
   initBooker();
   initAfterHours();
   initFooterNeon();
+  initSlogan();
   initPool();
   const ringTick = initRing();
   const tapeTicks = initTape();
