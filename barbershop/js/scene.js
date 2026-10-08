@@ -1,6 +1,6 @@
-// The 3D barbershop: a hydraulic chair under a spotlight, a spinning barber
-// pole, a real mirror, a neon sign and four tools that orbit the chair and
-// line up for the "Craft" section. Everything is modelled in code.
+// The 3D barbershop: four hydraulic chairs facing their mirrors, a spinning
+// barber pole, neon signs, and four tools that orbit the main chair and line
+// up for the "Craft" section. Everything is modelled in code.
 
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -10,6 +10,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const TAU = Math.PI * 2;
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -21,16 +22,25 @@ const v3 = (a) => new THREE.Vector3(a[0], a[1], a[2]);
 // `shift` moves that point across the frame (NDC units) so text has room.
 // The `m*` values apply on portrait screens.
 export const VIEWS = {
-  hero: { pos: [0.55, 1.28, 4.3], focus: [0, 0.98, -0.4], shift: [0.3, -0.02], mshift: [0, -0.4], mdist: 1.55, orbitR: 1.08, orbitY: 1.12, show: 0 },
+  hero: { pos: [0.55, 1.3, 4.3], focus: [0, 1.0, -0.4], shift: [0.3, -0.02], mshift: [0, -0.4], mdist: 1.55, orbitR: 1.08, orbitY: 1.12, show: 0 },
   story: { pos: [1.15, 1.72, 0.35], focus: [1.45, 1.74, -1.98], shift: [0.34, 0], mshift: [0.62, -0.1], mdist: 1.6, orbitR: 0.9, orbitY: 3.1, show: 0 },
-  services: { pos: [0.4, 3.1, 6.4], focus: [0, 1.0, -0.6], shift: [0, 0], mshift: [0, 0], mdist: 1.3, orbitR: 1.75, orbitY: 1.75, show: 0 },
+  services: { pos: [1.2, 3.2, 7.0], focus: [1.2, 1.1, -0.8], shift: [0, 0], mshift: [0, 0], mdist: 1.3, orbitR: 1.75, orbitY: 1.75, show: 0 },
   craft: { pos: [-0.22, 1.44, 2.95], focus: [-0.98, 1.32, 1.2], shift: [0.34, 0], mshift: [0, 0.34], mdist: 2.3, orbitR: 1.1, orbitY: 1.2, show: 1 },
-  team: { pos: [-3.1, 2.2, 3.1], focus: [0, 0.95, 0], shift: [0, 0], mshift: [0, 0], mdist: 1.2, orbitR: 1.2, orbitY: 1.35, show: 0 },
+  team: { pos: [-6.0, 1.75, 3.2], focus: [2.6, 0.95, -0.6], shift: [0, 0], mshift: [0, 0], mdist: 1.1, orbitR: 1.2, orbitY: 1.35, show: 0 },
+  shelf: { pos: [-0.55, 1.62, 0.55], focus: [-1.5, 1.62, -2.05], shift: [-0.36, 0], mshift: [0, 0.3], mdist: 1.35, orbitR: 0.9, orbitY: 3.1, show: 0 },
+  club: { pos: [1.6, 2.5, 5.2], focus: [1.4, 2.1, -2.1], shift: [0, 0], mshift: [0, 0], mdist: 1.2, orbitR: 1.3, orbitY: 1.4, show: 0 },
   words: { pos: [1.35, 1.45, 1.9], focus: [0, 1.6, -2.15], shift: [0, 0], mshift: [0, 0], mdist: 1.1, orbitR: 0.9, orbitY: 1.3, show: 0 },
   book: { pos: [0.1, 4.6, 2.3], focus: [0, 0.55, 0.15], shift: [0, 0], mshift: [0, 0], mdist: 1.3, orbitR: 1.3, orbitY: 1.05, show: 0 },
-  visit: { pos: [-0.35, 1.55, 1.55], focus: [-1.85, 1.8, -2.05], shift: [0.3, 0], mshift: [0, 0.3], mdist: 1.25, orbitR: 0.85, orbitY: 1.15, show: 0 },
-  footer: { pos: [0, 1.65, 7.6], focus: [0, 1.25, -1.2], shift: [0, 0], mshift: [0, 0], mdist: 1.5, orbitR: 1.2, orbitY: 1.2, show: 0 },
+  visit: { pos: [-3.3, 1.65, 1.0], focus: [-4.6, 1.85, -2.1], shift: [0.3, 0], mshift: [0, 0.3], mdist: 1.25, orbitR: 0.85, orbitY: 1.15, show: 0 },
+  footer: { pos: [1.5, 1.9, 9.5], focus: [1.5, 1.4, -1.5], shift: [0, 0], mshift: [0, 0], mdist: 1.5, orbitR: 1.2, orbitY: 1.2, show: 0 },
 };
+
+// Neon colours in linear light; sign intensity multiplies these.
+const NEON = {
+  pink: new THREE.Color(1.0, 0.16, 0.42),
+  cyan: new THREE.Color(0.2, 0.85, 1.0),
+};
+const CHAIR_X = [-3, 0, 3, 6];
 
 const SHOWCASE = v3(VIEWS.craft.focus);
 // The tool carousel slides across the craft camera's view, and steps back
@@ -41,7 +51,7 @@ const SHOW_SIDE = new THREE.Vector3().crossVectors(SHOW_DEPTH, new THREE.Vector3
 export async function createStage(canvas, opts = {}) {
   const reduced = !!opts.reducedMotion;
   // Screenshots only: jump straight to each camera position.
-  const settle = !!window.__KAIROS_SETTLE;
+  const settle = !!window.__BARBERSHOP_SETTLE;
   const small = Math.min(window.innerWidth, window.innerHeight) < 700;
   const tier = opts.tier || (small ? 1 : 2); // 2 high, 1 medium, 0 low
 
@@ -96,82 +106,103 @@ export async function createStage(canvas, opts = {}) {
   rail.position.set(0, 1.12, -2.16);
   scene.add(rail);
 
-  // Station: cabinet, marble top, towels.
-  const cabinet = mesh(new RoundedBoxGeometry(1.7, 0.86, 0.44, 3, 0.02), M.woodDark, 0, 0.45, -1.96);
-  scene.add(cabinet);
-  scene.add(mesh(new RoundedBoxGeometry(1.82, 0.05, 0.5, 3, 0.02), M.marble, 0, 0.905, -1.95));
-  for (let i = 0; i < 3; i++) {
-    const towel = mesh(new RoundedBoxGeometry(0.34, 0.06, 0.22, 3, 0.028), M.towel, -0.58, 0.96 + i * 0.058, -1.9);
-    towel.rotation.y = (i - 1) * 0.06;
-    scene.add(towel);
-  }
-  for (let i = 0; i < 3; i++) {
-    const knob = mesh(new THREE.SphereGeometry(0.018, 16, 12), M.brass, -0.55 + i * 0.55, 0.62, -1.73);
-    scene.add(knob);
-  }
+  // Four stations: cabinet, mirror, neon ring behind the mirror, chair.
+  // The main chair (x = 0) is the one you can spin; the others are baked
+  // into a few meshes to keep draw calls down.
+  const circle = new THREE.CircleGeometry(0.6, 72);
+  const frameGeo = new THREE.TorusGeometry(0.625, 0.038, 20, 96);
+  const frameInnerGeo = new THREE.TorusGeometry(0.585, 0.008, 8, 96);
+  const haloGeo = new THREE.TorusGeometry(0.72, 0.013, 10, 120);
+  const halos = [];
+  const sideYaw = { '-3': 0.35, 3: -0.3, 6: 0.15 };
+  let chair;
+  CHAIR_X.forEach((x, i) => {
+    const main = x === 0;
+    scene.add(bake(buildStation(M, main), x));
 
-  // Mirror with a brass frame. A real reflection on capable devices.
-  const mirrorGroup = new THREE.Group();
-  mirrorGroup.position.set(0, 1.64, -2.15);
-  scene.add(mirrorGroup);
-  let mirror;
-  if (tier >= 1) {
-    const size = tier === 2 ? 1024 : 512;
-    mirror = new Reflector(new THREE.CircleGeometry(0.6, 72), {
-      textureWidth: size,
-      textureHeight: size,
-      color: 0x7b8484,
-      clipBias: 0.003,
-      multisample: tier === 2 ? 4 : 0,
-    });
-  } else {
-    mirror = new THREE.Mesh(new THREE.CircleGeometry(0.6, 72), M.mirrorFake);
-  }
-  mirror.position.z = 0.01;
-  mirrorGroup.add(mirror);
-  const frameRing = mesh(new THREE.TorusGeometry(0.625, 0.038, 20, 96), M.brass);
-  mirrorGroup.add(frameRing);
-  const frameInner = mesh(new THREE.TorusGeometry(0.585, 0.008, 8, 96), M.brass);
-  frameInner.position.z = 0.02;
-  mirrorGroup.add(frameInner);
+    const mg = new THREE.Group();
+    mg.position.set(x, 1.64, -2.15);
+    scene.add(mg);
+    let mirror;
+    if (main ? tier >= 1 : tier >= 2) {
+      const size = main && tier === 2 ? 1024 : 512;
+      mirror = new Reflector(circle, {
+        textureWidth: size,
+        textureHeight: size,
+        color: 0x7b8484,
+        clipBias: 0.003,
+        multisample: main && tier === 2 ? 4 : 0,
+      });
+    } else {
+      mirror = new THREE.Mesh(circle, M.mirrorFake);
+    }
+    mirror.position.z = 0.01;
+    mg.add(mirror);
+    mg.add(mesh(frameGeo, M.brass));
+    const inner = mesh(frameInnerGeo, M.brass);
+    inner.position.z = 0.02;
+    mg.add(inner);
+    const halo = new THREE.Mesh(haloGeo, new THREE.MeshBasicMaterial({ color: 0x000000, fog: false }));
+    halo.position.z = -0.028;
+    mg.add(halo);
+    halos.push({ mat: halo.material, color: i % 2 ? NEON.pink : NEON.cyan, delay: 0.5 + i * 0.18 });
+
+    const c = buildChair(M);
+    if (main) {
+      chair = c;
+      // Bake the swivel and the base separately so the seat can still turn.
+      c.group.remove(c.swivel);
+      const swivel = bake(c.swivel);
+      const base = bake(c.group);
+      base.add(swivel);
+      chair = { group: base, swivel };
+      scene.add(base);
+    } else {
+      c.swivel.rotation.y = sideYaw[x];
+      scene.add(bake(c.group, x));
+    }
+  });
 
   // Shelf with products and a jar of blue disinfectant.
-  const shelf = buildShelf(M);
-  shelf.position.set(-1.85, 1.42, -2.05);
+  const shelf = bake(buildShelf(M));
+  shelf.position.set(-1.5, 1.42, -2.05);
   scene.add(shelf);
 
-  // Neon sign above the shelf.
-  const neonTex = await neonTexture();
-  const neonMat = new THREE.MeshBasicMaterial({
-    map: neonTex,
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-    color: new THREE.Color(0, 0, 0),
-    fog: false,
-  });
-  const neon = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.5625), neonMat);
-  neon.position.set(-1.85, 2.45, -2.165);
-  scene.add(neon);
+  // Neon signs: the shop name, scissors and an OPEN sign.
+  const neonTex = await neonTextures();
+  const signs = [];
+  const addSign = (tex, w, h, x, y, opts = {}) => {
+    const mat = new THREE.MeshBasicMaterial({
+      map: tex,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      color: 0x000000,
+      fog: false,
+    });
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+    m.position.set(x, y, -2.165);
+    scene.add(m);
+    signs.push({ mat, base: opts.base ?? 2.4, delay: opts.delay ?? 0.9, buzz: !!opts.buzz, next: 6, until: 0 });
+  };
+  addSign(neonTex.main, 2.0, 0.75, -1.5, 2.5, { delay: 0.9, base: 2.6 });
+  addSign(neonTex.scissors, 0.95, 0.95, 4.5, 2.2, { delay: 1.35 });
+  addSign(neonTex.open, 0.92, 0.46, -4.6, 1.85, { delay: 1.7, buzz: true });
 
   // Barber pole.
   const poleUniforms = { uTime: { value: 0 }, uGlow: { value: 0 } };
-  const pole = buildPole(M, poleUniforms);
+  const pole = bake(buildPole(M, poleUniforms));
   pole.position.set(1.45, 1.78, -1.98);
   scene.add(pole);
 
-  // Pendant bulbs.
+  // Pendant bulbs over the chairs.
   const bulbs = [];
-  for (const [x, y, z] of [[-0.95, 2.62, -0.7], [0.05, 2.9, -1.25], [1.0, 2.55, -0.55]]) {
+  for (const [x, y, z] of [[-0.95, 2.62, -0.7], [0.05, 2.9, -1.25], [1.0, 2.55, -0.55], [-3.3, 2.75, -0.8], [3.2, 2.6, -0.7], [6.1, 2.8, -0.9]]) {
     const b = buildBulb(M);
     b.position.set(x, y, z);
     scene.add(b);
     bulbs.push(b);
   }
-
-  // The chair.
-  const chair = buildChair(M);
-  scene.add(chair.group);
 
   // The tools.
   const tools = [buildRazor(M), buildShears(M), buildClipper(M), buildComb(M)];
@@ -198,10 +229,17 @@ export async function createStage(canvas, opts = {}) {
   rim.target.position.set(0, 0.9, 0);
   scene.add(rim, rim.target);
 
-  const shelfLight = new THREE.SpotLight(0xffc98a, 0, 0, 0.5, 0.7, 1.6);
-  shelfLight.position.set(-1.6, 3.6, -0.6);
-  shelfLight.target.position.set(-1.85, 1.6, -2.1);
-  scene.add(shelfLight, shelfLight.target);
+  // Softer lights over the other chairs.
+  const rows = [
+    [-3, 0.6],
+    [4.5, 0.75],
+  ].map(([x, angle]) => {
+    const l = new THREE.SpotLight(0xffd9ad, 0, 0, angle, 0.7, 1.6);
+    l.position.set(x, 4.4, 0.9);
+    l.target.position.set(x, 0.4, -0.1);
+    scene.add(l, l.target);
+    return l;
+  });
 
   const showLight = new THREE.SpotLight(0xfff1dc, 0, 0, 0.35, 0.8, 1.6);
   showLight.position.set(SHOWCASE.x + 1.3, SHOWCASE.y + 1.4, SHOWCASE.z + 1.9);
@@ -215,6 +253,14 @@ export async function createStage(canvas, opts = {}) {
   const poleLight = new THREE.PointLight(0xff6a5a, 0, 2.6, 1.8);
   poleLight.position.set(1.45, 1.8, -1.7);
   scene.add(poleLight);
+
+  // Coloured spill from the neon onto the floor, chairs and shelf.
+  const pinkLight = new THREE.PointLight(0xff3f86, 0, 6, 1.6);
+  pinkLight.position.set(-1.5, 2.3, -1.5);
+  scene.add(pinkLight);
+  const cyanLight = new THREE.PointLight(0x3fe0ff, 0, 6, 1.6);
+  cyanLight.position.set(4.5, 2.1, -1.5);
+  scene.add(cyanLight);
 
   // Visible light beam and dust inside it.
   const beam = buildBeam(keyPos, key.target.position);
@@ -247,6 +293,7 @@ export async function createStage(canvas, opts = {}) {
     lastTouch: 0,
     poleBoost: 0,
     neonFlicker: 0,
+    afterHours: 0,
   };
 
   const cur = {
@@ -257,6 +304,7 @@ export async function createStage(canvas, opts = {}) {
     orbitY: VIEWS.hero.orbitY,
     show: 0,
     craft: 0,
+    afterHours: 0,
   };
 
   const tmp = {
@@ -390,25 +438,44 @@ export async function createStage(canvas, opts = {}) {
 
     updateTools(time, dt);
 
-    // Lights and glow.
+    // Lights and glow. After hours, the house lights drop and the neon
+    // takes over.
+    cur.afterHours = settle ? state.afterHours : lerp(cur.afterHours, state.afterHours, 1 - Math.exp(-dt * 2.2));
+    const A = ease(clamp(cur.afterHours, 0, 1));
+    const house = P * (1 - 0.68 * A);
+    const glow = 1 + 0.8 * A;
     state.poleBoost *= Math.exp(-dt * 0.6);
     poleUniforms.uTime.value += dt * (reduced ? 0.08 : 0.32) * (1 + state.poleBoost * 6);
     poleUniforms.uGlow.value = P;
-    key.intensity = 26 * P;
-    rim.intensity = 9 * P;
-    shelfLight.intensity = 11 * P;
+    key.intensity = 26 * house;
+    rim.intensity = 9 * P * (1 - 0.3 * A);
+    for (const l of rows) l.intensity = 13 * house;
     showLight.intensity = 9 * P * (0.2 + cur.show * 0.8);
-    hemi.intensity = 0.4 * P;
-    bulbLight.intensity = 2.2 * P;
+    hemi.intensity = 0.4 * house;
+    bulbLight.intensity = 2.2 * house;
     poleLight.intensity = 1.4 * P;
-    beam.mat.uniforms.uIntensity.value = 0.11 * P;
-    for (const b of bulbs) b.userData.core.material.color.setRGB(9, 4.2, 1.6).multiplyScalar(P * (reduced ? 1 : 0.96 + Math.sin(time * 9 + b.position.x * 10) * 0.04));
+    beam.mat.uniforms.uIntensity.value = 0.11 * house;
+    for (const b of bulbs) b.userData.core.material.color.setRGB(9, 4.2, 1.6).multiplyScalar(P * (1 - 0.5 * A) * (reduced ? 1 : 0.96 + Math.sin(time * 9 + b.position.x * 10) * 0.04));
 
-    // Neon: flickers on after the lights.
-    const n = neonLevel(time - state.introStart, P);
+    // Neon: each sign stutters on after the lights, and the OPEN sign
+    // buzzes now and then like an old tube.
+    const since = time - state.introStart;
     const flick = state.neonFlicker > 0 ? (Math.random() > 0.5 ? 1 : 0.2) : 1;
     state.neonFlicker = Math.max(0, state.neonFlicker - dt);
-    neonMat.color.setScalar(2.6 * n * flick);
+    for (const sg of signs) {
+      let n = neonLevel(since - sg.delay, P);
+      if (sg.buzz && !reduced && n > 0.9) {
+        if (time > sg.next) {
+          sg.until = time + 0.35;
+          sg.next = time + 5 + Math.random() * 7;
+        }
+        if (time < sg.until) n *= Math.random() > 0.45 ? 1 : 0.15;
+      }
+      sg.mat.color.setScalar(sg.base * n * flick * glow);
+    }
+    for (const h of halos) h.mat.color.copy(h.color).multiplyScalar(3.2 * neonLevel(since - h.delay, P) * glow);
+    pinkLight.intensity = 2.2 * P * (0.7 + 1.3 * A);
+    cyanLight.intensity = 2.0 * P * (0.7 + 1.3 * A);
 
     dust.update(time, dt, reduced, P);
 
@@ -511,6 +578,9 @@ export async function createStage(canvas, opts = {}) {
     release() {
       state.dragging = false;
       state.lastTouch = clock.elapsedTime;
+    },
+    setAfterHours(on) {
+      state.afterHours = on ? 1 : 0;
     },
     celebrate() {
       state.yawVel = reduced ? 0 : 13;
@@ -705,6 +775,59 @@ function makeMaterials(T) {
     bulbGlass: new THREE.MeshPhysicalMaterial({ color: 0xffd9a8, roughness: 0.05, transparent: true, opacity: 0.22, depthWrite: false, envMapIntensity: 2 }),
     mirrorFake: new THREE.MeshStandardMaterial({ color: 0x8c9696, metalness: 1, roughness: 0.04 }),
   };
+}
+
+// Merge a group's meshes into one mesh per material. Positions stay the
+// same; `x` optionally moves the result along the wall.
+function bake(group, x) {
+  group.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(group.matrixWorld).invert();
+  const rel = new THREE.Matrix4();
+  const byMat = new Map();
+  group.traverse((o) => {
+    if (!o.isMesh || o.isInstancedMesh) return;
+    const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+    g.applyMatrix4(rel.multiplyMatrices(inv, o.matrixWorld));
+    for (const name of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(name)) g.deleteAttribute(name);
+    if (!g.attributes.uv) g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+    g.clearGroups();
+    if (!byMat.has(o.material)) byMat.set(o.material, []);
+    byMat.get(o.material).push(g);
+  });
+  const out = new THREE.Group();
+  out.position.copy(group.position);
+  out.quaternion.copy(group.quaternion);
+  out.scale.copy(group.scale);
+  if (x !== undefined) out.position.x = x;
+  for (const [mat, geos] of byMat) {
+    const m = new THREE.Mesh(mergeGeometries(geos), mat);
+    m.castShadow = !mat.transparent;
+    m.receiveShadow = true;
+    out.add(m);
+    geos.forEach((g) => g.dispose());
+  }
+  return out;
+}
+
+// Cabinet with a marble top and brass knobs; the main one has towels.
+function buildStation(M, towels) {
+  const g = new THREE.Group();
+  g.add(mesh(new RoundedBoxGeometry(1.7, 0.86, 0.44, 3, 0.02), M.woodDark, 0, 0.45, -1.96));
+  g.add(mesh(new RoundedBoxGeometry(1.82, 0.05, 0.5, 3, 0.02), M.marble, 0, 0.905, -1.95));
+  for (let i = 0; i < 3; i++) g.add(mesh(new THREE.SphereGeometry(0.018, 16, 12), M.brass, -0.55 + i * 0.55, 0.62, -1.73));
+  if (towels) {
+    for (let i = 0; i < 3; i++) {
+      const towel = mesh(new RoundedBoxGeometry(0.34, 0.06, 0.22, 3, 0.028), M.towel, -0.58, 0.96 + i * 0.058, -1.9);
+      towel.rotation.y = (i - 1) * 0.06;
+      g.add(towel);
+    }
+  } else {
+    // A spray bottle and a folded cape.
+    g.add(mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.17, 20), M.amber, 0.6, 1.015, -1.9));
+    g.add(mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.05, 10), M.ebony, 0.6, 1.125, -1.9));
+    g.add(mesh(new RoundedBoxGeometry(0.4, 0.04, 0.26, 2, 0.018), M.rubber, -0.5, 0.95, -1.9));
+  }
+  return g;
 }
 
 // ---------------------------------------------------------------- chair
@@ -1041,42 +1164,116 @@ function buildDust(dot, count) {
   };
 }
 
-async function neonTexture() {
+async function neonTextures() {
   const fontsReady = Promise.all([
-    document.fonts.load('italic 500 160px "Bodoni Moda"'),
+    document.fonts.load('400 200px "Neonderthaw"'),
+    document.fonts.load('800 120px "Big Shoulders Display"'),
     document.fonts.load('600 52px "Big Shoulders Display"'),
   ]);
-  await Promise.race([fontsReady, new Promise((r) => setTimeout(r, 1500))]).catch(() => {});
+  await Promise.race([fontsReady, new Promise((r) => setTimeout(r, 1800))]).catch(() => {});
 
-  const [c, g] = makeCanvas(1024, 384);
-  g.textAlign = 'center';
-  g.textBaseline = 'middle';
-  const draw = (fn, k = 1) => {
-    for (const [blur, width, alpha] of [[42, 10, 0.35], [18, 7, 0.7], [6, 4, 1]]) {
-      g.shadowColor = 'rgba(64, 214, 228, 1)';
+  // Layers of blur build the glow; the last pass is the hot white core.
+  const glowPasses = (g, rgb, draw, k = 1) => {
+    for (const [blur, alpha] of [[44, 0.45], [20, 0.75], [8, 1]]) {
+      g.shadowColor = `rgba(${rgb}, 1)`;
       g.shadowBlur = blur * k;
-      g.strokeStyle = `rgba(120, 236, 245, ${alpha})`;
-      g.lineWidth = width * k;
-      fn();
+      draw(`rgba(${rgb}, ${alpha})`);
     }
     g.shadowBlur = 0;
-    g.strokeStyle = 'rgba(235, 255, 255, 1)';
-    g.lineWidth = 2 * Math.max(k, 0.6);
-    fn();
+    draw('rgba(255, 240, 248, 0.95)', true);
   };
-  g.font = 'italic 500 168px "Bodoni Moda", Didot, "Bodoni 72", Georgia, serif';
-  draw(() => g.strokeText('Kairos', 512, 150));
-  g.font = '600 52px "Big Shoulders Display", "Arial Narrow", sans-serif';
-  if ('letterSpacing' in g) g.letterSpacing = '22px';
-  for (const [blur, color] of [[26, 'rgba(64, 214, 228, 0.9)'], [8, 'rgba(120, 236, 245, 1)'], [0, 'rgba(235, 255, 255, 1)']]) {
-    g.shadowColor = 'rgba(64, 214, 228, 1)';
-    g.shadowBlur = blur;
-    g.fillStyle = color;
-    g.fillText('BARBER HOUSE', 522, 296);
-  }
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
+  const PINK = '255, 70, 140';
+  const CYAN = '70, 225, 255';
+
+  // Shop name in a tube script, with an underline swash.
+  const [mc, mg] = makeCanvas(1024, 384);
+  mg.textAlign = 'center';
+  mg.textBaseline = 'middle';
+  mg.font = '400 210px "Neonderthaw", "Brush Script MT", cursive';
+  glowPasses(mg, PINK, (style, core) => {
+    mg.fillStyle = style;
+    if (core) {
+      mg.save();
+      mg.globalAlpha = 0.6;
+    }
+    mg.fillText('Barbershop', 512, 160);
+    if (core) mg.restore();
+  });
+  glowPasses(
+    mg,
+    CYAN,
+    (style) => {
+      mg.strokeStyle = style;
+      mg.lineWidth = 6;
+      mg.lineCap = 'round';
+      mg.beginPath();
+      mg.moveTo(210, 286);
+      mg.bezierCurveTo(400, 250, 640, 320, 830, 268);
+      mg.stroke();
+    },
+    0.8
+  );
+  mg.font = '600 40px "Big Shoulders Display", "Arial Narrow", sans-serif';
+  if ('letterSpacing' in mg) mg.letterSpacing = '16px';
+  glowPasses(mg, CYAN, (style) => {
+    mg.fillStyle = style;
+    mg.fillText('ATHENS · EST. 2012', 520, 340);
+  }, 0.5);
+
+  // Scissors drawn as one tube.
+  const [sc, sg] = makeCanvas(512, 512);
+  glowPasses(sg, CYAN, (style) => {
+    sg.strokeStyle = style;
+    sg.lineWidth = 9;
+    sg.lineCap = 'round';
+    sg.lineJoin = 'round';
+    sg.beginPath();
+    sg.arc(176, 372, 52, 0, Math.PI * 2);
+    sg.moveTo(388, 372);
+    sg.arc(336, 372, 52, 0, Math.PI * 2);
+    // Blades cross at the pivot and taper to points.
+    sg.moveTo(212, 334);
+    sg.quadraticCurveTo(300, 230, 384, 72);
+    sg.quadraticCurveTo(318, 200, 262, 262);
+    sg.moveTo(300, 334);
+    sg.quadraticCurveTo(212, 230, 128, 72);
+    sg.quadraticCurveTo(194, 200, 250, 262);
+    sg.stroke();
+    sg.beginPath();
+    sg.arc(256, 268, 7, 0, Math.PI * 2);
+    sg.stroke();
+  });
+
+  // OPEN in red letters inside a blue frame.
+  const [oc, og] = makeCanvas(512, 256);
+  glowPasses(og, CYAN, (style) => {
+    og.strokeStyle = style;
+    og.lineWidth = 8;
+    og.beginPath();
+    if (og.roundRect) og.roundRect(34, 34, 444, 188, 40);
+    else og.rect(34, 34, 444, 188);
+    og.stroke();
+  }, 0.7);
+  og.textAlign = 'center';
+  og.textBaseline = 'middle';
+  og.font = '800 128px "Big Shoulders Display", "Arial Narrow", sans-serif';
+  if ('letterSpacing' in og) og.letterSpacing = '14px';
+  glowPasses(og, '255, 60, 70', (style, core) => {
+    og.fillStyle = style;
+    if (core) {
+      og.save();
+      og.globalAlpha = 0.5;
+    }
+    og.fillText('OPEN', 263, 134);
+    if (core) og.restore();
+  });
+
+  const tex = (c) => {
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  };
+  return { main: tex(mc), scissors: tex(sc), open: tex(oc) };
 }
 
 // ---------------------------------------------------------------- tools

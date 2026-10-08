@@ -2,18 +2,18 @@
 // Prices, hours, barbers and contact details below are placeholders.
 
 export const SHOP = {
-  name: 'Kairos',
-  fullName: 'Kairos Barber House',
+  name: 'Barbershop',
+  fullName: 'Barbershop Athens',
   established: 2012,
-  street: 'Odos Kairou 7',
+  street: 'Aiolou Street',
   city: 'Athens',
-  postcode: '105 52',
+  postcode: '105 51',
   country: 'GR',
-  mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Kairos+Barber+House+Athens',
+  mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Barbershop+Aiolou+Street+Athens',
   phone: '+30 210 000 0000',
   whatsapp: '302100000000', // international format, digits only
-  email: 'hello@kairos.example',
-  instagram: 'kairos.barbers',
+  email: 'hello@barbershop.example',
+  instagram: 'barbershop.athens',
   timezone: 'Europe/Athens',
   currency: 'EUR',
   locale: 'en-GB',
@@ -107,7 +107,7 @@ export const SERVICES = [
   },
   {
     id: 'ritual',
-    name: 'The Kairos Ritual',
+    name: 'The Full Ritual',
     group: 'ritual',
     minutes: 100,
     price: 65,
@@ -171,7 +171,7 @@ export const REVIEWS = [
   { name: 'Mark T.', service: 'Royal Shave', text: 'Two hot towels, two passes and not a single nick. I booked the next one at the desk.' },
   { name: 'Andreas K.', service: 'Cut & Beard', text: 'They actually listen. I said keep the length and they kept the length.' },
   { name: 'Sofia L.', service: 'Junior Cut', text: 'My son sat still for thirty minutes. Leo made it a game and the cut is great.' },
-  { name: 'Yannis D.', service: 'The Kairos Ritual', text: 'Worth every euro. The scalp massage alone fixed my week.' },
+  { name: 'Yannis D.', service: 'The Full Ritual', text: 'Worth every euro. The scalp massage alone fixed my week.' },
   { name: 'Chris M.', service: 'Signature Cut', text: 'On time, no rushing, and the cut still looks right three weeks later.' },
 ];
 
@@ -193,3 +193,38 @@ export const FAQ = [
     a: 'Card, Apple Pay, Google Pay or cash. Tips go straight to your barber.',
   },
 ];
+
+// The shelf: products clients can add to their visit and pay for at the shop.
+export const PRODUCTS = [
+  { id: 'clay', name: 'Matte Clay', size: '100 ml', price: 18, text: 'Strong hold, no shine. What we finish most cuts with.' },
+  { id: 'pomade', name: 'Classic Pomade', size: '100 g', price: 17, text: 'Water-based, medium shine, washes out clean.' },
+  { id: 'oil', name: 'Beard Oil', size: '30 ml', price: 16, text: 'Cedar and bergamot. Softens the beard and the skin under it.' },
+  { id: 'tonic', name: 'Bay Rum Tonic', size: '100 ml', price: 22, text: 'The aftershave we splash on after every Royal Shave.' },
+  { id: 'cream', name: 'Shave Cream', size: '150 ml', price: 15, text: 'Thick lather from a few drops. Made for a brush.' },
+  { id: 'comb', name: 'Pocket Comb', size: '13 cm', price: 9, text: 'Saw-cut acetate teeth that glide instead of pulling.' },
+];
+
+// Memberships, paid monthly at the shop. Joining sends a WhatsApp message.
+export const MEMBERSHIPS = [
+  {
+    id: 'regular',
+    name: 'The Regular',
+    price: 22,
+    perks: ['One Signature Cut a month', 'Priority on Saturday slots', '10% off the shelf'],
+  },
+  {
+    id: 'sharp',
+    name: 'The Sharp',
+    price: 42,
+    featured: true,
+    perks: ['Two cuts a month', 'One Beard Sculpt a month', 'Free neck line-ups between visits', '15% off the shelf'],
+  },
+  {
+    id: 'club',
+    name: 'The After Hours',
+    price: 70,
+    perks: ['Two cuts and one Royal Shave a month', 'Free line-ups any time', 'Book after closing on Thursdays', '20% off the shelf'],
+  },
+];
+
+export const GIFT_AMOUNTS = [25, 40, 65, 100];

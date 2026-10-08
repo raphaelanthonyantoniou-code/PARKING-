@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Kairos Barber House</title>
+<title>Barbershop</title>
 <meta name="description" content="Skin fades, scissor cuts and straight-razor shaves in central Athens. Book a chair online in under a minute.">
 <meta name="theme-color" content="#0a0c0b">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Kairos Barber House">
-<meta property="og:description" content="Sharp cuts. Hot towels. No rush. Book a chair in central Athens.">
+<meta property="og:title" content="Barbershop">
+<meta property="og:description" content="Sharp cuts. Hot towels. Neon after dark. Book a chair in central Athens.">
 <meta property="og:image" content="assets/og-image.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700;800;900&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700;800;900&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Hanken+Grotesk:wght@400;500;600;700&family=Neonderthaw&display=swap">
 <link rel="stylesheet" href="css/style.css">
 <script type="importmap">
 { "imports": { "three": "./vendor/three/three.module.min.js", "three/addons/": "./vendor/three/addons/" } }
@@ -25,11 +25,11 @@
 {
   "@context": "https://schema.org",
   "@type": "HairSalon",
-  "name": "Kairos Barber House",
+  "name": "Barbershop Athens",
   "description": "Barbershop for skin fades, scissor cuts, beard sculpting and straight-razor shaves.",
   "telephone": "+30 210 000 0000",
   "priceRange": "€15–€65",
-  "address": { "@type": "PostalAddress", "streetAddress": "Odos Kairou 7", "addressLocality": "Athens", "postalCode": "105 52", "addressCountry": "GR" },
+  "address": { "@type": "PostalAddress", "streetAddress": "Aiolou Street", "addressLocality": "Athens", "postalCode": "105 51", "addressCountry": "GR" },
   "openingHoursSpecification": [
     { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday","Tuesday","Thursday","Friday"], "opens": "10:00", "closes": "20:00" },
     { "@type": "OpeningHoursSpecification", "dayOfWeek": "Wednesday", "opens": "10:00", "closes": "21:00" },
@@ -47,7 +47,7 @@
   <div class="loader-core">
     <div class="loader-pole"><span id="loader-fill"></span></div>
     <p class="loader-count"><span id="loader-num">00</span><small>%</small></p>
-    <p class="loader-word">Kairos <em>barber house</em></p>
+    <p class="loader-word"><span class="neon-script">Barbershop</span></p>
   </div>
 </div>
 
@@ -64,18 +64,22 @@
 <div class="progress" aria-hidden="true"><span id="progress"></span></div>
 
 <header class="nav" id="nav">
-  <a class="brand" href="#top" aria-label="Kairos Barber House, back to top">
+  <a class="brand" href="#top" aria-label="Barbershop, back to top">
     <span class="brand-pole" aria-hidden="true"><i></i></span>
-    <span class="brand-word">Kairos</span>
+    <span class="brand-word">Barbershop</span>
   </a>
   <nav class="nav-links" aria-label="Main">
     <a href="#services">Menu</a>
-    <a href="#craft">Craft</a>
     <a href="#barbers">Barbers</a>
+    <a href="#shelf">Shop</a>
+    <a href="#club">Club</a>
     <a href="#visit">Visit</a>
   </nav>
   <p class="open-pill" id="open-pill"><i aria-hidden="true"></i><span>Checking hours…</span></p>
-  <a class="btn btn-brass nav-book" href="#book" data-magnetic>Book a chair</a>
+  <button class="neon-switch nav-switch" type="button" data-neon-toggle aria-pressed="false" title="Turn the house lights down and the neon up">
+    <span class="neon-switch-track" aria-hidden="true"><i></i></span><span class="neon-switch-label" data-neon-label>After hours</span>
+  </button>
+  <a class="btn btn-brass nav-book" href="#book" data-magnetic>Book<span class="nav-book-more">a chair</span></a>
   <button class="menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="menu">
     <span class="menu-btn-lines" aria-hidden="true"><i></i><i></i></span>
     <span class="menu-btn-text">Menu</span>
@@ -87,10 +91,15 @@
     <a href="#services">Menu &amp; prices</a>
     <a href="#craft">The craft</a>
     <a href="#barbers">Barbers</a>
+    <a href="#shelf">Shop</a>
+    <a href="#club">Club &amp; gift cards</a>
     <a href="#reviews">Reviews</a>
     <a href="#book">Book a chair</a>
     <a href="#visit">Visit</a>
   </nav>
+  <button class="neon-switch menu-switch" type="button" data-neon-toggle aria-pressed="false">
+    <span class="neon-switch-track" aria-hidden="true"><i></i></span><span class="neon-switch-label" data-neon-label>After hours</span>
+  </button>
 </div>
 
 <main id="main">
@@ -99,11 +108,11 @@
   <section class="hero" id="top" data-scene="hero">
     <div class="wrap hero-inner">
       <div class="hero-copy">
-        <p class="eyebrow hero-eyebrow"><span>Barber house · Athens · since <span data-since>2012</span></span></p>
+        <p class="eyebrow hero-eyebrow"><span>Athens · since <span data-since>2012</span> · walk-ins welcome</span></p>
         <h1 class="hero-title" aria-label="Sharp cuts. Hot towels. No rush.">
           <span class="line" data-split>Sharp cuts.</span>
           <span class="line" data-split>Hot towels.</span>
-          <span class="line line-serif" data-split>No rush.</span>
+          <span class="line line-neon" aria-hidden="true">No rush.</span>
         </h1>
         <p class="hero-lede">Fades, scissor cuts and straight-razor shaves in central Athens. Four barbers, four chairs, and every appointment booked long enough to do it properly.</p>
         <div class="hero-cta">
@@ -113,10 +122,15 @@
       </div>
     </div>
     <div class="wrap hero-foot">
+      <div class="hero-foot-left">
       <p class="spin-hint" id="spin-hint">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M18 2.5v4.5h-4.5M6 21.5V17h4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span>Drag the chair to spin it</span>
       </p>
+      <button class="neon-switch" type="button" data-neon-toggle aria-pressed="false">
+        <span class="neon-switch-track" aria-hidden="true"><i></i></span><span class="neon-switch-label" data-neon-label>After hours</span>
+      </button>
+      </div>
       <a class="scroll-cue" href="#story"><span>Scroll</span><i aria-hidden="true"></i></a>
     </div>
   </section>
@@ -132,14 +146,14 @@
     <div class="wrap story-grid">
       <div class="story-copy">
         <p class="eyebrow" data-reveal>The house</p>
-        <h2 class="h2" data-reveal>A barbershop built around <em>the right moment.</em></h2>
-        <p class="lede" data-reveal><i class="greek">Καιρός</i> is the old Greek word for the right moment: not any time, the right time. It is how we run the shop.</p>
+        <h2 class="h2" data-reveal>Built for the chair, <em>not the clock.</em></h2>
+        <p class="lede" data-reveal>We opened in <span data-since>2012</span> with one chair and a neon sign in the window. Now there are four chairs, four barbers and a lot more neon. The rules haven't changed.</p>
         <p data-reveal>We book enough time for the cut you actually want, warm the towels before you sit down, and finish with the mirror held behind your head so you can see the back. If it isn't right yet, we keep going.</p>
       </div>
     </div>
     <div class="wrap">
       <dl class="stats" data-reveal>
-        <div class="stat"><dt>Years on Odos Kairou</dt><dd><span data-count data-since-years>14</span></dd></div>
+        <div class="stat"><dt>Years open</dt><dd><span data-count data-since-years>14</span></dd></div>
         <div class="stat"><dt>Barbers, one chair each</dt><dd><span data-count="4">4</span></dd></div>
         <div class="stat"><dt>Hot towel temperature</dt><dd><span data-count="45">45</span><small>°C</small></dd></div>
         <div class="stat"><dt>Razor passes in every shave</dt><dd><span data-count="2">2</span></dd></div>
@@ -226,6 +240,59 @@
     </div>
   </section>
 
+  <!-- Shelf -->
+  <section class="shelf" id="shelf" data-scene="shelf">
+    <div class="wrap shelf-layout">
+      <div class="shelf-space" aria-hidden="true"></div>
+      <div class="shelf-content">
+        <header class="section-head">
+          <div>
+            <p class="eyebrow" data-reveal>The shelf</p>
+            <h2 class="h2" data-reveal>Take the finish <em>home with you.</em></h2>
+            <p class="section-note shelf-note" data-reveal>Add products to your visit and they will be waiting at the desk. You pay at the shop.</p>
+          </div>
+        </header>
+        <div class="shelf-grid" id="shelf-grid"></div>
+        <div class="shelf-bar" id="shelf-bar" hidden>
+          <span id="shelf-bar-text"></span>
+          <a class="btn btn-brass btn-small" href="#book">Go to booking</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Club -->
+  <section class="club" id="club" data-scene="club">
+    <div class="wrap">
+      <header class="section-head">
+        <div>
+          <p class="eyebrow" data-reveal>The club</p>
+          <h2 class="h2" data-reveal>Your chair, <em>every month.</em></h2>
+        </div>
+        <p class="section-note" data-reveal>Memberships are paid monthly at the shop. Cancel any time.</p>
+      </header>
+      <div class="club-grid" id="club-grid"></div>
+
+      <div class="gift" data-reveal>
+        <div class="gift-copy">
+          <p class="eyebrow">Gift cards</p>
+          <h3 class="h3">Give someone <em>a good hour.</em></h3>
+          <p>Any amount, spent on any service or anything on the shelf, valid for a year. We prepare it at the desk.</p>
+          <div class="gift-amounts" id="gift-amounts" role="group" aria-label="Gift card amount"></div>
+          <a class="btn btn-brass" id="gift-send" href="#" target="_blank" rel="noopener">Order on WhatsApp</a>
+        </div>
+        <div class="gift-stage">
+          <div class="gift-card" id="gift-card" aria-hidden="true">
+            <span class="gift-stripe"></span>
+            <span class="gift-name neon-script">Barbershop</span>
+            <span class="gift-value" id="gift-value">€40</span>
+            <span class="gift-label">Gift card · Athens</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Reviews -->
   <section class="words" id="reviews" data-scene="words">
     <div class="wrap">
@@ -276,7 +343,7 @@
     <div class="wrap visit-grid">
       <div class="visit-card" data-reveal>
         <p class="eyebrow">Visit</p>
-        <h2 class="h2 visit-title" id="visit-address">Odos Kairou 7<em>Athens 105 52</em></h2>
+        <h2 class="h2 visit-title" id="visit-address">Aiolou Street<em>Athens 105 51</em></h2>
         <p class="open-line" id="open-line"></p>
         <div class="contact-list" id="contact-list"></div>
         <a class="btn btn-brass" id="directions" href="#" target="_blank" rel="noopener">Get directions</a>
@@ -296,9 +363,9 @@
 
 <footer class="footer" data-scene="footer">
   <div class="wrap">
-    <a class="footer-word" href="#book" aria-label="Book a chair at Kairos">Kairos</a>
+    <a class="footer-word neon-script" href="#book" aria-label="Book a chair">Barbershop</a>
     <div class="footer-row">
-      <p>Kairos Barber House · <span id="footer-address">Odos Kairou 7, Athens</span></p>
+      <p>Barbershop Athens · <span id="footer-address">Aiolou Street, Athens</span></p>
       <nav class="footer-links" aria-label="Footer">
         <a href="#services">Menu</a>
         <a href="#barbers">Barbers</a>

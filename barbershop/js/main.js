@@ -1,4 +1,4 @@
-import { SHOP, SERVICES, GROUPS, BARBERS, REVIEWS, FAQ } from './config.js';
+import { SHOP, SERVICES, GROUPS, BARBERS, REVIEWS, FAQ, PRODUCTS, MEMBERSHIPS, GIFT_AMOUNTS } from './config.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -31,9 +31,9 @@ const store = {
 const money = new Intl.NumberFormat(SHOP.locale, { style: 'currency', currency: SHOP.currency, maximumFractionDigits: 0 });
 
 // Scene darkness behind each section, so text stays readable.
-const DIM = { hero: 0, story: 0.18, services: 0.62, craft: 0, team: 0.66, words: 0.5, book: 0.74, visit: 0.38, footer: 0.72 };
+const DIM = { hero: 0, story: 0.18, services: 0.62, craft: 0, team: 0.6, shelf: 0.2, club: 0.6, words: 0.5, book: 0.74, visit: 0.38, footer: 0.6 };
 // On tall phone screens text covers more of the scene.
-const DIM_PORTRAIT = { ...DIM, story: 0.45, words: 0.6, visit: 0.5 };
+const DIM_PORTRAIT = { ...DIM, story: 0.45, shelf: 0.62, words: 0.6, visit: 0.5 };
 const portrait = matchMedia('(max-aspect-ratio: 9 / 10)');
 
 let stage = null;
@@ -332,6 +332,143 @@ function renderTeam() {
 }
 
 // ======================================================================
+// The shelf: products added to the visit
+// ======================================================================
+
+function renderShelf() {
+  $('#shelf-grid').innerHTML = PRODUCTS.map(
+    (p, i) => `<article class="product" data-reveal style="--rd:${(i % 2) * 80}">
+      <div class="product-top"><h3>${esc(p.name)}</h3><span class="product-price">€${p.price}</span></div>
+      <p class="product-size">${esc(p.size)}</p>
+      <p>${esc(p.text)}</p>
+      <button class="product-add" type="button" data-product="${p.id}" aria-pressed="false">
+        <span class="product-add-off">Add to my visit</span><span class="product-add-on">Added to your visit</span>
+      </button>
+    </article>`
+  ).join('');
+
+  $('#shelf-grid').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-product]');
+    if (!btn || B.result) {
+      if (btn && B.result) toast('Start a new booking to add products.');
+      return;
+    }
+    const id = btn.dataset.product;
+    const had = B.products.includes(id);
+    B.products = had ? B.products.filter((x) => x !== id) : [...B.products, id];
+    syncShelf();
+    renderSummary();
+    toast(had ? `Removed ${productById(id).name}` : `${productById(id).name} will be waiting at your visit`);
+  });
+  syncShelf();
+}
+
+function syncShelf() {
+  $$('[data-product]').forEach((b) => b.setAttribute('aria-pressed', String(B.products.includes(b.dataset.product))));
+  const bar = $('#shelf-bar');
+  if (!B.products.length) {
+    bar.hidden = true;
+    return;
+  }
+  bar.hidden = false;
+  const n = B.products.length;
+  $('#shelf-bar-text').textContent = `${n} item${n > 1 ? 's' : ''} · ${money.format(productsTotal(B.products))} · paid at the shop`;
+}
+
+// ======================================================================
+// Memberships and gift cards
+// ======================================================================
+
+function renderClub() {
+  const wa = (text) => `https://wa.me/${SHOP.whatsapp}?text=${encodeURIComponent(text)}`;
+  $('#club-grid').innerHTML = MEMBERSHIPS.map(
+    (m, i) => `<article class="tier${m.featured ? ' is-featured' : ''}" data-reveal style="--rd:${i * 90}">
+      ${m.featured ? '<p class="tier-flag">Most chosen</p>' : ''}
+      <h3>${esc(m.name)}</h3>
+      <p class="tier-price"><strong>€${m.price}</strong><span>a month</span></p>
+      <ul>${m.perks.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>
+      <a class="btn ${m.featured ? 'btn-neon' : 'btn-ghost'}" href="${wa(`Hello ${SHOP.name}, I would like to join ${m.name} (€${m.price} a month).`)}" target="_blank" rel="noopener">Join ${esc(m.name)}</a>
+    </article>`
+  ).join('');
+
+  const chips = $('#gift-amounts');
+  let amount = GIFT_AMOUNTS[1] ?? GIFT_AMOUNTS[0];
+  chips.innerHTML = GIFT_AMOUNTS.map(
+    (a) => `<button type="button" class="chip-btn" data-amount="${a}" aria-pressed="${a === amount}">€${a}</button>`
+  ).join('');
+  const send = $('#gift-send');
+  const update = () => {
+    $('#gift-value').textContent = `€${amount}`;
+    send.href = wa(`Hello ${SHOP.name}, I would like a €${amount} gift card. Please tell me how to pay and pick it up.`);
+    $$('[data-amount]', chips).forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.amount) === amount)));
+  };
+  chips.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-amount]');
+    if (!b) return;
+    amount = Number(b.dataset.amount);
+    update();
+  });
+  update();
+
+  // The gift card leans toward the pointer.
+  const card = $('#gift-card');
+  if (finePointer && !reduced) {
+    const zone = card.parentElement;
+    zone.addEventListener('pointermove', (e) => {
+      const r = zone.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5;
+      const y = (e.clientY - r.top) / r.height - 0.5;
+      card.style.transform = `rotateY(${x * 22}deg) rotateX(${-y * 16}deg)`;
+      card.style.setProperty('--gx', `${(x + 0.5) * 100}%`);
+    });
+    zone.addEventListener('pointerleave', () => (card.style.transform = ''));
+  }
+}
+
+// ======================================================================
+// After hours: house lights down, neon up
+// ======================================================================
+
+let afterHours = store.get('barbershop.afterHours', false) === true;
+
+function applyAfterHours() {
+  root.classList.toggle('is-after-hours', afterHours);
+  $$('[data-neon-toggle]').forEach((b) => {
+    b.setAttribute('aria-pressed', String(afterHours));
+    const label = b.querySelector('[data-neon-label]');
+    if (label) label.textContent = afterHours ? 'After hours on' : 'After hours';
+  });
+  stage?.setAfterHours(afterHours);
+}
+
+function initAfterHours() {
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('[data-neon-toggle]')) return;
+    afterHours = !afterHours;
+    store.set('barbershop.afterHours', afterHours);
+    applyAfterHours();
+    toast(afterHours ? 'House lights down. Neon on.' : 'House lights back on.');
+  });
+  applyAfterHours();
+}
+
+function initFooterNeon() {
+  const word = $('.footer-word');
+  if (reduced || !('IntersectionObserver' in window)) {
+    word.classList.add('is-lit');
+    return;
+  }
+  new IntersectionObserver(
+    ([e], io) => {
+      if (!e.isIntersecting) return;
+      word.classList.add('is-lit');
+      io.disconnect();
+    },
+    { threshold: 0.4 }
+  ).observe(word);
+}
+
+// ======================================================================
 // Reviews: a 3D ring
 // ======================================================================
 
@@ -425,10 +562,13 @@ function initRing() {
 // Booking
 // ======================================================================
 
-const B = { step: 0, service: null, barber: 'any', date: null, time: null, name: '', phone: '', email: '', notes: '', result: null, errors: {} };
+const B = { step: 0, service: null, barber: 'any', date: null, time: null, name: '', phone: '', email: '', notes: '', products: [], result: null, errors: {} };
 const STEP_NEXT = ['Choose a barber', 'Choose a time', 'Your details', 'Request booking'];
 
 const svcById = (id) => SERVICES.find((s) => s.id === id);
+const productById = (id) => PRODUCTS.find((p) => p.id === id);
+const productsTotal = (ids) => ids.reduce((sum, id) => sum + (productById(id)?.price || 0), 0);
+const productNames = (ids) => ids.map((id) => productById(id)?.name).filter(Boolean).join(', ');
 const barberById = (id) => BARBERS.find((b) => b.id === id);
 const barberLabel = (id) => (id === 'any' ? 'First free chair' : barberById(id)?.name || '');
 
@@ -492,8 +632,9 @@ function renderSummary() {
       ${row('Barber', svc ? barberLabel(B.barber) : '')}
       ${row('When', when)}
       ${row('Length', svc ? `${svc.minutes} min` : '')}
+      ${B.products.length ? `<div><dt>Pick up</dt><dd>${esc(productNames(B.products))}</dd></div>` : ''}
     </dl>
-    <div class="sum-total"><span>Total</span><strong>${svc ? money.format(svc.price) : '–'}</strong></div>`;
+    <div class="sum-total"><span>Total</span><strong>${svc || B.products.length ? money.format((svc?.price || 0) + productsTotal(B.products)) : '–'}</strong></div>`;
 }
 
 function renderBooker(focus = false) {
@@ -623,7 +764,8 @@ function paneDone() {
           <div><dt>Day</dt><dd>${fmtDay.format(parseIso(r.date))}</dd></div>
           <div><dt>Time</dt><dd>${r.time} · ${svc.minutes} min</dd></div>
           <div><dt>Name</dt><dd>${esc(r.name)}</dd></div>
-          <div><dt>Total</dt><dd>${money.format(svc.price)}</dd></div>
+          <div><dt>Total</dt><dd>${money.format(r.total)}</dd></div>
+          ${r.products.length ? `<div class="ticket-wide"><dt>Pick up</dt><dd>${esc(productNames(r.products))}</dd></div>` : ''}
         </dl>
       </div>
       <div class="ticket-cut" aria-hidden="true"></div>
@@ -632,7 +774,7 @@ function paneDone() {
     <p class="done-text">${esc(text)}</p>
     <div class="done-actions">
       ${r.status !== 'sent' ? `<a class="btn btn-brass" href="${whatsappLink(r)}" target="_blank" rel="noopener">Send on WhatsApp</a>` : ''}
-      <a class="btn btn-ghost" href="${icsHref(r)}" download="kairos-${r.code}.ics">Add to calendar</a>
+      <a class="btn btn-ghost" href="${icsHref(r)}" download="barbershop-${r.code}.ics">Add to calendar</a>
       <button class="btn btn-ghost" type="button" data-b-reset>Book another</button>
     </div></div>`;
 }
@@ -645,6 +787,7 @@ function bookingText(r) {
     `${fmtDayLong.format(parseIso(r.date))} at ${r.time}`,
     `Name: ${r.name}`,
     `Mobile: ${r.phone}`,
+    r.products.length ? `Please put aside: ${productNames(r.products)}` : '',
     r.notes ? `Notes: ${r.notes}` : '',
     `Ref: ${r.code}`,
   ]
@@ -664,9 +807,9 @@ function icsHref(r) {
   const ics = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Kairos Barber House//Booking//EN',
+    'PRODID:-//Barbershop Athens//Booking//EN',
     'BEGIN:VEVENT',
-    `UID:${r.code}@kairos`,
+    `UID:${r.code}@barbershop`,
     `DTSTAMP:${stamp(new Date())}`,
     `DTSTART:${stamp(start)}`,
     `DTEND:${stamp(end)}`,
@@ -686,7 +829,7 @@ function makeCode() {
   const bytes = new Uint8Array(6);
   crypto.getRandomValues(bytes);
   const s = [...bytes].map((b) => alphabet[b % alphabet.length]).join('');
-  return `K-${s.slice(0, 3)}-${s.slice(3)}`;
+  return `B-${s.slice(0, 3)}-${s.slice(3)}`;
 }
 
 function validate() {
@@ -715,6 +858,8 @@ async function submitBooking() {
     time: B.time,
     minutes: svc.minutes,
     price: svc.price,
+    products: [...B.products],
+    total: svc.price + productsTotal(B.products),
     name: B.name.trim(),
     phone: B.phone.trim(),
     email: B.email.trim(),
@@ -739,9 +884,9 @@ async function submitBooking() {
       r.status = 'error';
     }
   }
-  const mine = store.get('kairos.bookings', []);
+  const mine = store.get('barbershop.bookings', []);
   mine.push({ code: r.code, service: r.service, barber: r.barber, date: r.date, time: r.time, status: r.status });
-  store.set('kairos.bookings', mine.slice(-10));
+  store.set('barbershop.bookings', mine.slice(-10));
   B.result = r;
   renderBooker(true);
   stage?.celebrate();
@@ -750,7 +895,7 @@ async function submitBooking() {
 function renderMine() {
   const box = $('#mine');
   const today = shopNow().date;
-  const list = store.get('kairos.bookings', []).filter((b) => b.date >= today && svcById(b.service));
+  const list = store.get('barbershop.bookings', []).filter((b) => b.date >= today && svcById(b.service));
   if (!list.length) {
     box.hidden = true;
     return;
@@ -813,8 +958,9 @@ function initBooker() {
       return submitBooking();
     }
     if (e.target.closest('[data-b-reset]')) {
-      Object.assign(B, { step: 0, service: null, barber: 'any', date: null, time: null, notes: '', result: null, errors: {} });
+      Object.assign(B, { step: 0, service: null, barber: 'any', date: null, time: null, notes: '', products: [], result: null, errors: {} });
       renderBooker(true);
+      syncShelf();
     }
   });
 
@@ -844,7 +990,7 @@ function initBooker() {
   $('#mine').addEventListener('click', (e) => {
     const btn = e.target.closest('[data-forget]');
     if (!btn) return;
-    store.set('kairos.bookings', store.get('kairos.bookings', []).filter((b) => b.code !== btn.dataset.forget));
+    store.set('barbershop.bookings', store.get('barbershop.bookings', []).filter((b) => b.code !== btn.dataset.forget));
     renderMine();
   });
 
@@ -853,7 +999,10 @@ function initBooker() {
     const s = e.target.closest('[data-book-service]');
     const b = e.target.closest('[data-book-barber]');
     if (!s && !b) return;
-    if (B.result) Object.assign(B, { result: null, date: null, time: null });
+    if (B.result) {
+      Object.assign(B, { result: null, date: null, time: null, products: [] });
+      syncShelf();
+    }
     if (s) {
       B.service = s.dataset.bookService;
       B.step = 1;
@@ -1207,7 +1356,11 @@ async function boot() {
   splitHero();
   renderServices();
   renderTeam();
+  renderShelf();
+  renderClub();
   initBooker();
+  initAfterHours();
+  initFooterNeon();
   const ringTick = initRing();
   const tapeTicks = initTape();
   initReveal();
@@ -1246,6 +1399,7 @@ async function boot() {
   const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('Scene took too long')), 12000));
   try {
     stage = await Promise.race([buildStage(), timeout]);
+    stage.setAfterHours(afterHours);
     $('#stage').addEventListener('webglcontextlost', () => {
       stage?.stop();
       stage = null;
