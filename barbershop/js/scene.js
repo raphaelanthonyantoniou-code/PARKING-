@@ -229,24 +229,30 @@ export async function createStage(canvas, opts = {}) {
   for (const t of tools) scene.add(t.group);
 
   // Optional areas, each in its own module: the pool lounge, the waiting
-  // area and reception, and the barber props at the stations. A module that
-  // fails to load or build is skipped so the rest of the shop still renders.
+  // area and reception, the barber props and the TV corner. They load after
+  // the shop is on screen so a slow device still gets the shop quickly; a
+  // module that fails to load or build is skipped and the rest carries on.
   const extras = {};
   const modules = [
-    ['pool', () => import('./pool.js'), 'createPool'],
-    ['lounge', () => import('./lounge.js'), 'createLounge'],
     ['props', () => import('./props.js'), 'createProps'],
+    ['pool', () => import('./pool.js'), 'createPool'],
     ['tv', () => import('./tv.js'), 'createTV'],
+    ['lounge', () => import('./lounge.js'), 'createLounge'],
   ];
-  for (const [key, load, fn] of modules) {
-    try {
-      const made = await (await load())[fn]({ M, T, tier, reduced });
-      if (made?.group) {
-        scene.add(made.group);
-        extras[key] = made;
+  async function loadExtras() {
+    for (const [key, load, fn] of modules) {
+      try {
+        const made = await (await load())[fn]({ M, T, tier, reduced });
+        if (made?.group) {
+          await renderer.compileAsync(made.group, camera, scene).catch(() => {});
+          scene.add(made.group);
+          extras[key] = made;
+        }
+      } catch (err) {
+        console.warn(`3D ${key} skipped:`, err);
       }
-    } catch (err) {
-      console.warn(`3D ${key} skipped:`, err);
+      // Give the page a frame between areas.
+      await new Promise((r) => setTimeout(r, 60));
     }
   }
 
@@ -610,6 +616,7 @@ export async function createStage(canvas, opts = {}) {
 
   await renderer.compileAsync(scene, camera).catch(() => {});
   resize();
+  setTimeout(loadExtras, 400);
 
   return {
     renderer,

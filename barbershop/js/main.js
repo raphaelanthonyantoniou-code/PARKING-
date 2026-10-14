@@ -502,7 +502,7 @@ function syncTvButton() {
 
 function toggleTv() {
   if (!stage?.tv.ready()) {
-    toast('The TV needs 3D graphics, which this device has turned off.');
+    toast(stage ? 'The TV is still warming up. Try again in a moment.' : 'The TV needs 3D graphics, which this device has turned off.');
     return;
   }
   stage.tv.toggle();
@@ -531,7 +531,7 @@ function initPool() {
     const btn = e.target.closest('[data-pool]');
     if (!btn) return;
     if (!stage?.pool.ready()) {
-      toast('The pool table needs 3D graphics, which this device has turned off.');
+      toast(stage ? 'The table is still being set up. Try again in a moment.' : 'The pool table needs 3D graphics, which this device has turned off.');
       return;
     }
     if (btn.dataset.pool === 'break') stage.pool.breakShot();
@@ -1494,18 +1494,31 @@ async function boot() {
     target = 1;
     return s;
   };
-  const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('Scene took too long')), 12000));
-  try {
-    stage = await Promise.race([buildStage(), timeout]);
+  const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('Scene took too long')), 20000));
+  const attach = (s) => {
+    stage = s;
     stage.setAfterHours(afterHours);
     $('#stage').addEventListener('webglcontextlost', () => {
       stage?.stop();
       stage = null;
       root.classList.add('no-webgl');
     });
+  };
+  const building = buildStage();
+  try {
+    attach(await Promise.race([building, timeout]));
   } catch (err) {
     console.warn('3D scene off:', err.message);
     root.classList.add('no-webgl');
+    // A slow device still gets the shop: switch it on whenever it is ready.
+    if (err.message === 'Scene took too long') {
+      building.then((s) => {
+        attach(s);
+        root.classList.remove('no-webgl');
+        if (finished) s.start();
+        console.info('3D scene on after a slow build');
+      }).catch(() => {});
+    }
   }
 
   await Promise.race([document.fonts?.ready, new Promise((r) => setTimeout(r, 2500))]);
