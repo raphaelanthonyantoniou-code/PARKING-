@@ -199,6 +199,24 @@ export async function createStage(canvas, opts = {}) {
   addSign(neonTex.main, 2.0, 0.75, -1.5, 2.5, { delay: 0.9, base: 2.6 });
   addSign(neonTex.scissors, 0.95, 0.95, 4.5, 2.2, { delay: 1.35 });
   addSign(neonTex.open, 0.92, 0.46, -4.6, 1.85, { delay: 1.7, buzz: true });
+  addSign(neonTex.fresh, 1.9, 0.6, 1.5, 3.05, { delay: 2.0, base: 2.2 });
+  addSign(neonTex.woo, 1.3, 0.65, -4.5, 2.95, { delay: 2.3, base: 2.4, buzz: true });
+  addSign(neonTex.bolt, 0.5, 0.67, 7.35, 2.0, { delay: 2.6, base: 2.2 });
+
+  // Neon tubes: pink along the top of the wall, cyan along the floor so it
+  // pools on the tiles.
+  const tubes = [];
+  const addTube = (len, x, y, z, color, delay, r = 0.016) => {
+    const mat = new THREE.MeshBasicMaterial({ color: 0x000000, fog: false });
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 10, 1), mat);
+    m.rotation.z = Math.PI / 2;
+    m.position.set(x, y, z);
+    scene.add(m);
+    tubes.push({ mat, color: new THREE.Color(color), delay });
+  };
+  addTube(28, 0, 3.55, -2.14, 0xff3d8f, 1.1);
+  addTube(28, 0, 3.47, -2.14, 0x46e1ff, 1.3, 0.008);
+  addTube(28, 0, 0.04, -2.12, 0x46e1ff, 1.5, 0.02);
 
   // Barber pole.
   const poleUniforms = { uTime: { value: 0 }, uGlow: { value: 0 } };
@@ -321,7 +339,7 @@ export async function createStage(canvas, opts = {}) {
   const composer = new EffectComposer(renderer, rt);
   composer.setPixelRatio(pixelRatio);
   composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.42, 0.5, 0.9);
+  const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.52, 0.55, 0.88);
   if (tier >= 1) composer.addPass(bloom);
   composer.addPass(new OutputPass());
 
@@ -536,6 +554,7 @@ export async function createStage(canvas, opts = {}) {
       sg.mat.color.setScalar(sg.base * n * flick * glow);
     }
     for (const h of halos) h.mat.color.copy(h.color).multiplyScalar(3.2 * neonLevel(since - h.delay, P) * glow);
+    for (const tb of tubes) tb.mat.color.copy(tb.color).multiplyScalar(2.4 * neonLevel(since - tb.delay, P) * glow);
     pinkLight.intensity = 2.2 * P * (0.7 + 1.3 * A);
     cyanLight.intensity = 2.0 * P * (0.7 + 1.3 * A);
 
@@ -1228,9 +1247,12 @@ async function neonTextures() {
   );
   mg.font = '600 40px "Big Shoulders Display", "Arial Narrow", sans-serif';
   if ('letterSpacing' in mg) mg.letterSpacing = '16px';
-  glowPasses(mg, CYAN, (style) => {
+  // The line under the name; window.__BARBERSHOP_SIGN_LINE overrides it
+  // (an empty string hides it, for screenshots and promo videos).
+  const signLine = window.__BARBERSHOP_SIGN_LINE ?? 'ATHENS · EST. 2012';
+  if (signLine) glowPasses(mg, CYAN, (style) => {
     mg.fillStyle = style;
-    mg.fillText('ATHENS · EST. 2012', 520, 340);
+    mg.fillText(signLine, 520, 340);
   }, 0.5);
 
   // Scissors drawn as one tube.
@@ -1286,7 +1308,48 @@ async function neonTextures() {
     t.colorSpace = THREE.SRGBColorSpace;
     return t;
   };
-  return { main: tex(mc), scissors: tex(sc), open: tex(oc) };
+  // FRESH FADES in a framed box.
+  const [fc, fg] = makeCanvas(1024, 320);
+  fg.textAlign = 'center';
+  fg.textBaseline = 'middle';
+  fg.font = '800 150px "Big Shoulders Display", "Arial Narrow", sans-serif';
+  if ('letterSpacing' in fg) fg.letterSpacing = '10px';
+  glowPasses(fg, CYAN, (style) => {
+    fg.fillStyle = style;
+    fg.fillText('FRESH FADES', 512, 168);
+  });
+  glowPasses(fg, PINK, (style) => {
+    fg.strokeStyle = style;
+    fg.lineWidth = 7;
+    fg.beginPath();
+    fg.roundRect(56, 40, 912, 240, 40);
+    fg.stroke();
+  }, 0.8);
+
+  // Woo! in script.
+  const [wc, wg] = makeCanvas(768, 384);
+  wg.textAlign = 'center';
+  wg.textBaseline = 'middle';
+  wg.font = '400 250px "Neonderthaw", cursive';
+  glowPasses(wg, PINK, (style, core) => {
+    wg.fillStyle = style;
+    if (core) { wg.save(); wg.globalAlpha = 0.6; }
+    wg.fillText('Woo!', 384, 200);
+    if (core) wg.restore();
+  });
+
+  // A lightning bolt in amber.
+  const [bc, bg] = makeCanvas(384, 512);
+  glowPasses(bg, '255, 196, 70', (style) => {
+    bg.strokeStyle = style;
+    bg.lineWidth = 10;
+    bg.lineJoin = 'round';
+    bg.beginPath();
+    bg.moveTo(222, 46); bg.lineTo(110, 272); bg.lineTo(196, 272); bg.lineTo(150, 466); bg.lineTo(290, 214); bg.lineTo(204, 214); bg.closePath();
+    bg.stroke();
+  });
+
+  return { main: tex(mc), scissors: tex(sc), open: tex(oc), fresh: tex(fc), woo: tex(wc), bolt: tex(bc) };
 }
 
 // ---------------------------------------------------------------- tools
