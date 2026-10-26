@@ -654,7 +654,8 @@ function buildFadeLab(section, { SERVICES, reduced }) {
     head.root,
     readout,
     replay,
-    el('figcaption', { class: 'sx-sr', text: 'Side profile painted hair by hair, showing the fade you build.' }));
+    el('figcaption', { class: 'sx-sr', text: 'A head showing the fade you build.' }),
+    el('p', { class: 'fl-credit', text: '3D head scan: Lee Perry-Smith, CC BY 3.0' }));
 
   const controls = el('div', { class: 'fl-panel', 'data-reveal': true },
     el('div', { class: 'fl-field' }, el('p', { class: 'fl-label', text: 'Start from a classic' }), presetRow),
@@ -689,7 +690,12 @@ function buildFadeLab(section, { SERVICES, reduced }) {
   let raf = 0;
   const topStyle = () => ({ top, lift: top * 0.8, sweep: 0.4, texture: top >= 6 ? 1.6 : 0, slick: false });
 
+  // The sculpted 3D head takes over where the device can draw it.
+  let h3 = null;
+  const style3 = (side) => ({ ...side, top: state.top, lift: state.top * 0.8, sweep: 0.4, texture: state.top >= 6 ? 1.6 : 0, slick: false });
+
   function cutTo(from, to, dur = 2600) {
+    if (h3) { h3.setStyle(style3(from), { animate: false }); h3.setStyle(style3(to)); return; }
     if (reduced) { shownSide = to; kick(); return; }
     pass = { from, to, t0: performance.now(), dur };
     kick();
@@ -755,7 +761,8 @@ function buildFadeLab(section, { SERVICES, reduced }) {
       b.setAttribute('aria-pressed', String(p.fade === state.fade && p.guard === state.guard && p.top === state.top));
     });
     stage.style.setProperty('--fill', String((state.top - 1) / 9));
-    if (sidesChanged) cutTo(pass ? pass.to : shownSide, sideOf());
+    if (h3) h3.setStyle(style3(sideOf()));
+    else if (sidesChanged) cutTo(pass ? pass.to : shownSide, sideOf());
     else kick();
   }
 
@@ -800,6 +807,18 @@ function buildFadeLab(section, { SERVICES, reduced }) {
 
   update(false);
   head.fit();
+  if (window.WebGL2RenderingContext && !document.documentElement.classList.contains('no-webgl')) {
+    import('./head3d.js')
+      .then((m) => m.createHead3D(stage, { reduced }))
+      .then((h) => {
+        h3 = h;
+        stage.classList.add('is-3d');
+        stage.insertBefore(h.canvas, head.root);
+        head.root.hidden = true;
+        h3.setStyle(style3(sideOf()), { animate: false });
+      })
+      .catch((err) => console.warn('3D head skipped:', err));
+  }
   // First time the head is on screen, the barber cuts it in.
   if (!reduced && 'IntersectionObserver' in window) {
     const io = new IntersectionObserver(([e]) => {

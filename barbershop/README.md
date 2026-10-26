@@ -58,6 +58,11 @@ Text that lives in `index.html`: the page title and description, the structured 
 
 Time slots only hide past times and the barber's days off. Live availability needs a booking system behind `bookingEndpoint`.
 
+## Fade lab
+
+- A sculpted 3D head (`js/head3d.js`): the fade is carved into the scalp by a shader, measured up from the hairline so it wraps over the ear and drops to the nape; the top is built from hair clumps combed per style. Drag to turn it. Devices without WebGL get the painted 2D head instead.
+- "Try it on your own head" (`js/tryon.js`): a selfie or photo, face and hair found on the device with MediaPipe (`vendor/mediapipe/`), and the fade applied to the visitor's own hair. Nothing is uploaded.
+
 ## 3D scene
 
 `js/scene.js` builds everything in code with [three.js](https://threejs.org) r170 (MIT, vendored in `vendor/three`). Camera positions per section are in `VIEWS` at the top of the file.
@@ -70,4 +75,5 @@ Time slots only hide past times and the barber's days off. Live availability nee
 
 - Replace every placeholder in `js/config.js` and the structured data in `index.html`.
 - Replace the sample reviews with real ones, then set `demo: false`.
+- The fade lab's 3D head is the Lee Perry-Smith head scan by Infinite-Realities (CC BY 3.0, from the three.js examples). Keep the credit line on the stage, or swap in your own model at `vendor/models/`.
 - Fonts load from Google Fonts (Big Shoulders Display, Bodoni Moda, Hanken Grotesk, Neonderthaw). Self-host them if you need to avoid third-party requests.

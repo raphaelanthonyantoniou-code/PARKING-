@@ -84,6 +84,13 @@
 .fl-replay:hover { background: rgba(255, 79, 154, 0.24); box-shadow: 0 0 18px rgba(255, 79, 154, 0.45); }
 
 .cb-art .head { display: block; aspect-ratio: 250 / 320; }
+.fl-stage .head3d {
+  position: relative; display: block; width: 100%; height: auto; aspect-ratio: 1 / 1.15; margin-inline: auto; cursor: grab; touch-action: pan-y;
+  -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent 96%); mask-image: linear-gradient(to bottom, #000 78%, transparent 96%);
+}
+.fl-stage .head3d:active { cursor: grabbing; }
+.fl-credit { display: none; position: absolute; left: 18px; top: 12px; font-size: 0.62rem; letter-spacing: 0.04em; color: rgba(232, 222, 202, 0.45); }
+.fl-stage.is-3d .fl-credit { display: block; }
 
 .fl-presets { display: flex; flex-wrap: wrap; gap: 8px; }
 .fl-preset {
