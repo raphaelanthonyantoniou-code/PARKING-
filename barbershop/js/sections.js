@@ -477,6 +477,8 @@ function buildFadeLab(section, { SERVICES, reduced }) {
   const book = el('button', { type: 'button', class: 'btn btn-brass fl-book', 'data-cursor': 'Book' }, 'Book this cut', icon('M5 12h14M13 6l6 6-6 6'));
   const readout = el('p', { class: 'fl-readout', 'aria-hidden': 'true' });
   const replay = el('button', { type: 'button', class: 'fl-replay', 'data-cursor': 'Cut' }, icon('M6 4l14 8-14 8z'), 'Watch the cut');
+  const tryOn = el('button', { type: 'button', class: 'btn btn-neon fl-try', 'data-cursor': 'Try' },
+    icon('M4 8h3l2-3h6l2 3h3v11H4zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z'), 'Try it on your own head');
 
   const stage = el('figure', { class: 'fl-stage', 'data-reveal': true },
     el('div', { class: 'fl-ring', 'aria-hidden': 'true' }),
@@ -500,7 +502,8 @@ function buildFadeLab(section, { SERVICES, reduced }) {
     el('div', { class: 'fl-card-row' },
       el('div', {}, el('p', { class: 'fl-card-k', text: 'Stays sharp' }), sharp, why),
       el('div', {}, el('p', { class: 'fl-card-k', text: 'Book as' }), svcLabel)),
-    book);
+    book,
+    tryOn);
 
   section.append(el('div', { class: 'wrap fl-wrap' },
     el('div', { class: 'fl-side' },
@@ -599,6 +602,26 @@ function buildFadeLab(section, { SERVICES, reduced }) {
   });
   range.addEventListener('input', () => { state.top = +range.value; update(false); });
   replay.addEventListener('click', () => cutTo({ ...UNCUT }, sideOf(), 1700));
+  // The try-on mirror loads its face and hair models only when asked for.
+  tryOn.addEventListener('click', async () => {
+    tryOn.disabled = true;
+    try {
+      const m = await import('./tryon.js');
+      m.openTryOn({
+        state, FADES, GUARDS, PRESETS,
+        onBook: (c) => {
+          const sides = c.fade !== state.fade || c.guard !== state.guard;
+          Object.assign(state, { fade: c.fade, guard: c.guard, top: c.top });
+          update(sides);
+          book.click();
+        },
+      });
+    } catch (err) {
+      console.warn('Try-on skipped:', err);
+    } finally {
+      tryOn.disabled = false;
+    }
+  });
 
   update(false);
   head.fit();
