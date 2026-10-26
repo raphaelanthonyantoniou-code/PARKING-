@@ -1515,7 +1515,8 @@ async function boot() {
       building.then((s) => {
         attach(s);
         root.classList.remove('no-webgl');
-        if (finished) s.start();
+        // Late arrivals still get the lights-up and the neon switching on.
+        if (finished) { s.start(); s.intro(); }
         console.info('3D scene on after a slow build');
       }).catch(() => {});
     }
